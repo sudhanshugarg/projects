@@ -210,7 +210,7 @@ typedef class NAND : public DNAMotif {
             notStrand.print();
         }
         void printConcentration(void){
-            cout << "Concentration: " << DNAMotif::getConcentrationMultiplier()
+            cout << "Conc: " << DNAMotif::getConcentrationMultiplier()
                 << "X" << endl;
         }
     private:
