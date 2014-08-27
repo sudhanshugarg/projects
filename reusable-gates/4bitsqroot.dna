@@ -1,0 +1,51 @@
+directive sample 50000.0 100
+directive scale 100.0
+
+def INPUT_0() = < p1^ x1^ x2^ x3^ n1^ >
+def INPUT_4() = < p2^ y1^ y2^ y3^ n2^ >
+def NAND_5() = {y1^*}[y2^y3^c0^y1^y2^]{y3^*}
+def NOT_NAND_5() = < y1^* c0^* y3^* k0^ >
+def INPUT_8() = < p3^ z1^ z2^ z3^ n3^ >
+def NAND_1() = {x1^*}[x2^x3^c1^z1^z2^]{z3^*}
+def NOT_NAND_1() = < z1^* c1^* x3^* k1^ >
+def NAND_9() = {z1^*}[z2^z3^c2^z1^z2^]{z3^*}
+def NOT_NAND_9() = < z1^* c2^* z3^* k2^ >
+def () = {y1^*}[y2^y3^c3^c2^*z3^*]{k2^*}
+def NAND_7() = {x1^*}[x2^x3^c4^y3^c3^]{c2^}
+def NOT_NAND_7() = < y3^* c4^* x3^* k3^ >
+def INPUT_12() = < p4^ w1^ w2^ w3^ n4^ >
+def NAND_6() = {c0^}[y3^*k0^c5^w1^w2^]{w3^*}
+def NOT_NAND_6() = < w1^* c5^* k0^* k4^ >
+def () = {c1^}[x3^*k1^c6^c5^*k0^*]{k4^*}
+def NAND_13() = {c0^}[y3^*k0^c7^z1^z2^]{z3^*}
+def NOT_NAND_13() = < z1^* c7^* k0^* k5^ >
+def () = {c4^}[x3^*k3^c8^c7^*k0^*]{k5^*}
+def NAND_3() = {k1^*}[c6^c5^*c9^k3^c8^]{c7^}
+def NOT_NAND_3() = < k3^* c9^* c5^ k6^ >
+def NAND_14() = {x1^*}[x2^x3^c10^x1^x2^]{x3^*}
+def NOT_NAND_14() = < x1^* c10^* x3^* k7^ >
+def NAND_15() = {c0^}[y3^*k0^c11^c10^*x3^*]{k7^*}
+def NOT_NAND_15() = < c10^ c11^* k0^* k8^ >
+( 300*INPUT_0()
+| 400*INPUT_4()
+| 300*NAND_5()
+| 300*NOT_NAND_5()
+| 300*INPUT_8()
+| 100*NAND_1()
+| 100*NOT_NAND_1()
+| 100*NAND_9()
+| 100*NOT_NAND_9()
+| 100*NAND_7()
+| 100*NOT_NAND_7()
+| 100*INPUT_12()
+| 100*NAND_6()
+| 100*NOT_NAND_6()
+| 100*NAND_13()
+| 100*NOT_NAND_13()
+| 100*NAND_3()
+| 100*NOT_NAND_3()
+| 100*NAND_14()
+| 100*NOT_NAND_14()
+| 100*NAND_15()
+| 100*NOT_NAND_15()
+)
