@@ -10,6 +10,7 @@ using namespace std;
 enum MOTIF_TYPE { NAND_MOTIF, STRAND_MOTIF, DNA_MOTIF, 
     AND_MOTIF, OR_MOTIF, NOT_MOTIF, NOR_MOTIF};
 enum TOEHOLD_TYPE {NORMAL, DSD};
+enum CIRCUIT_TYPE {ONE_TIME, REUSABLE};
 const string DOMAINPREFIX = "c";
 const string PREFIX2 = "k";
 
@@ -47,7 +48,7 @@ typedef class DNAMotif{
         virtual void printForDSD(string motif = "GATE"){
             cout << "in the dnamotif printfordsd" << endl;
         }
-        virtual void printForCRN(void){
+        virtual void printForCRN(CIRCUIT_TYPE version=ONE_TIME){
             cerr << "in the dnamotif printforcrn" << endl;
         }
         virtual void constructFromInput(DNAMotif *I1, DNAMotif *I2, int version=1){
@@ -123,11 +124,17 @@ typedef class STRAND : public DNAMotif{
             cout << endl;
         }
 
-        void printForCRN(void){
-           cout << "init " << id << "0 100 |" << endl;
+        void printForCRN(CIRCUIT_TYPE version = ONE_TIME){
+           int conc = DNAMotif::getConcentrationMultiplier() * 100;
+           cout << "init " << id << "0 " << conc << " |" << endl;
+           if(version == ONE_TIME){
            cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} " << "S_" << id[0] << " |" << endl;
            cout << "S_" << id[0] << " + " << id[0] << "0 -> {bi_forward} " << "3" << id[0] << "0 |" << endl;
            cout << "S_" << id[0] << " + " << id[0] << "1 -> {bi_forward} " << "3" << id[0] << "1 |" << endl;
+           }
+           else if (version == REUSABLE){
+           cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} |" << endl;
+           }
         }
         
         string getDomain(int idx, TOEHOLD_TYPE type = NORMAL){
@@ -334,8 +341,10 @@ typedef class NAND : public DNAMotif {
             notStrand.printForDSD(motif);
         }
 
-        void printForCRN(void){
-           cout << "init " << id[0] << "0 100 |" << endl;
+        void printForCRN(CIRCUIT_TYPE version = ONE_TIME){
+           int conc = DNAMotif::getConcentrationMultiplier() * 100;
+           if(version == ONE_TIME){
+           cout << "init " << id[0] << "0 " << conc << " |" << endl;
            cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} " << "S_" << id[0] << " |" << endl;
            cout << "S_" << id[0] << " + " << id[0] << "0 -> {bi_forward} " << "3" << id[0] << "0 |" << endl;
            cout << "S_" << id[0] << " + " << id[0] << "1 -> {bi_forward} " << "3" << id[0] << "1 |" << endl;
@@ -343,6 +352,14 @@ typedef class NAND : public DNAMotif {
            cout << id[1] << "0 + " << id[2] << "1 + " << id[0] << "0 -> {tri_forward} " << id[0] << "1 |" << endl;
            cout << id[1] << "1 + " << id[2] << "0 + " << id[0] << "0 -> {tri_forward} " << id[0] << "1 |" << endl;
            cout << id[1] << "1 + " << id[2] << "1 + " << id[0] << "1 -> {tri_forward} " << id[0] << "0 |" << endl;
+           }
+           else if (version == REUSABLE){
+           cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} |" << endl;
+           cout << id[1] << "0 + " << id[2] << "0 -> {bi_forward} " << id[0] << "1 |" << endl;
+           cout << id[1] << "0 + " << id[2] << "1 -> {bi_forward} " << id[0] << "1 |" << endl;
+           cout << id[1] << "1 + " << id[2] << "0 -> {bi_forward} " << id[0] << "1 |" << endl;
+           cout << id[1] << "1 + " << id[2] << "1 -> {bi_forward} " << id[0] << "0 |" << endl;
+           }
         }
 
         vector<STRAND> getStrands(void){
@@ -438,8 +455,10 @@ typedef class AND : public DNAMotif {
 
         }
 
-        void printForCRN(void){
-           cout << "init " << id[0] << "0 100 |" << endl;
+        void printForCRN(CIRCUIT_TYPE version = ONE_TIME){
+           int conc = DNAMotif::getConcentrationMultiplier() * 100;
+           if(version == ONE_TIME){
+           cout << "init " << id[0] << "0 " << conc << " |" << endl;
            cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} " << "S_" << id[0] << " |" << endl;
            cout << "S_" << id[0] << " + " << id[0] << "0 -> {bi_forward} " << "3" << id[0] << "0 |" << endl;
            cout << "S_" << id[0] << " + " << id[0] << "1 -> {bi_forward} " << "3" << id[0] << "1 |" << endl;
@@ -447,6 +466,14 @@ typedef class AND : public DNAMotif {
            cout << id[1] << "0 + " << id[2] << "1 + " << id[0] << "1 -> {tri_forward} " << id[0] << "0 |" << endl;
            cout << id[1] << "1 + " << id[2] << "0 + " << id[0] << "1 -> {tri_forward} " << id[0] << "0 |" << endl;
            cout << id[1] << "1 + " << id[2] << "1 + " << id[0] << "0 -> {tri_forward} " << id[0] << "1 |" << endl;
+           }
+           else if (version == REUSABLE){
+           cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} |" << endl;
+           cout << id[1] << "0 + " << id[2] << "0 -> {bi_forward} " << id[0] << "0 |" << endl;
+           cout << id[1] << "0 + " << id[2] << "1 -> {bi_forward} " << id[0] << "0 |" << endl;
+           cout << id[1] << "1 + " << id[2] << "0 -> {bi_forward} " << id[0] << "0 |" << endl;
+           cout << id[1] << "1 + " << id[2] << "1 -> {bi_forward} " << id[0] << "1 |" << endl;
+           }
         }
 
         vector<STRAND> getStrands(void){
@@ -514,13 +541,21 @@ typedef class NOT : public DNAMotif {
             notStrand.printForDSD(motif);
         }
 
-        void printForCRN(void){
-           cout << "init " << id[0] << "0 100 |" << endl;
+        void printForCRN(CIRCUIT_TYPE version = ONE_TIME){
+           int conc = DNAMotif::getConcentrationMultiplier() * 100;
+           if(version == ONE_TIME){
+           cout << "init " << id[0] << "0 " << conc << " |" << endl;
            cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} " << "S_" << id[0] << " |" << endl;
            cout << "S_" << id[0] << " + " << id[0] << "0 -> {bi_forward} " << "3" << id[0] << "0 |" << endl;
            cout << "S_" << id[0] << " + " << id[0] << "1 -> {bi_forward} " << "3" << id[0] << "1 |" << endl;
            cout << id[1] << "0 + " << id[0] << "0 -> {bi_forward} " << id[0] << "1 |" << endl;
            cout << id[1] << "1 + " << id[0] << "1 -> {bi_forward} " << id[0] << "0 |" << endl;
+           }
+           else if (version == REUSABLE){
+           cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} |" << endl;
+           cout << id[1] << "0 -> {uni_forward} " << id[0] << "1 |" << endl;
+           cout << id[1] << "1 -> {uni_forward} " << id[0] << "0 |" << endl;
+           }
         }
 
         vector<STRAND> getStrands(void){
@@ -580,8 +615,10 @@ typedef class OR : public DNAMotif {
         void printForDSD(string motif="OR"){
         }
 
-        void printForCRN(void){
-           cout << "init " << id[0] << "0 100 |" << endl;
+        void printForCRN(CIRCUIT_TYPE version = ONE_TIME){
+           int conc = DNAMotif::getConcentrationMultiplier() * 100;
+           if(version == ONE_TIME){
+           cout << "init " << id[0] << "0 " << conc << " |" << endl;
            cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} " << "S_" << id[0] << " |" << endl;
            cout << "S_" << id[0] << " + " << id[0] << "0 -> {bi_forward} " << "3" << id[0] << "0 |" << endl;
            cout << "S_" << id[0] << " + " << id[0] << "1 -> {bi_forward} " << "3" << id[0] << "1 |" << endl;
@@ -589,6 +626,14 @@ typedef class OR : public DNAMotif {
            cout << id[1] << "0 + " << id[2] << "1 + " << id[0] << "0 -> {tri_forward} " << id[0] << "1 |" << endl;
            cout << id[1] << "1 + " << id[2] << "0 + " << id[0] << "0 -> {tri_forward} " << id[0] << "1 |" << endl;
            cout << id[1] << "1 + " << id[2] << "1 + " << id[0] << "0 -> {tri_forward} " << id[0] << "1 |" << endl;
+           }
+           else if (version == REUSABLE){
+           cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} |" << endl;
+           cout << id[1] << "0 + " << id[2] << "0 -> {bi_forward} " << id[0] << "0 |" << endl;
+           cout << id[1] << "0 + " << id[2] << "1 -> {bi_forward} " << id[0] << "1 |" << endl;
+           cout << id[1] << "1 + " << id[2] << "0 -> {bi_forward} " << id[0] << "1 |" << endl;
+           cout << id[1] << "1 + " << id[2] << "1 -> {bi_forward} " << id[0] << "1 |" << endl;
+           }
         }
 
         vector<STRAND> getStrands(void){
@@ -647,8 +692,10 @@ typedef class NOR : public DNAMotif {
         void printForDSD(string motif="NOR"){
         }
 
-        void printForCRN(void){
-           cout << "init " << id[0] << "0 100 |" << endl;
+        void printForCRN(CIRCUIT_TYPE version = ONE_TIME){
+           int conc = DNAMotif::getConcentrationMultiplier() * 100;
+           if(version == ONE_TIME){
+           cout << "init " << id[0] << "0 " << conc << " |" << endl;
            cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} " << "S_" << id[0] << " |" << endl;
            cout << "S_" << id[0] << " + " << id[0] << "0 -> {bi_forward} " << "3" << id[0] << "0 |" << endl;
            cout << "S_" << id[0] << " + " << id[0] << "1 -> {bi_forward} " << "3" << id[0] << "1 |" << endl;
@@ -656,6 +703,14 @@ typedef class NOR : public DNAMotif {
            cout << id[1] << "0 + " << id[2] << "1 + " << id[0] << "1 -> {tri_forward} " << id[0] << "0 |" << endl;
            cout << id[1] << "1 + " << id[2] << "0 + " << id[0] << "1 -> {tri_forward} " << id[0] << "0 |" << endl;
            cout << id[1] << "1 + " << id[2] << "1 + " << id[0] << "1 -> {tri_forward} " << id[0] << "0 |" << endl;
+           }
+           else if (version == REUSABLE){
+           cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} |" << endl;
+           cout << id[1] << "0 + " << id[2] << "0 -> {bi_forward} " << id[0] << "1 |" << endl;
+           cout << id[1] << "0 + " << id[2] << "1 -> {bi_forward} " << id[0] << "0 |" << endl;
+           cout << id[1] << "1 + " << id[2] << "0 -> {bi_forward} " << id[0] << "0 |" << endl;
+           cout << id[1] << "1 + " << id[2] << "1 -> {bi_forward} " << id[0] << "0 |" << endl;
+           }
         }
 
         vector<STRAND> getStrands(void){
@@ -1018,12 +1073,12 @@ int main(int argc, char *argv[])
         cout << oss_conc.str() << endl;
 
         cout << "Printing in CRN - for checking with LBS" << endl;
-        cout << "directive sample 100.0 100\n"
-            << "directive scale 100.0\n\n"
+        cout << "directive sample 200.0 100\n\n"
+            << "rate uni_forward = 5e-2;\n"
             << "rate bi_forward = 1e-3;\n"
-            << "rate tri_forward = 1e3;\n";
+            << "rate tri_forward = 3e-5;\n";
         for(int i=0;i<n;i++){
-            m[sorted[i]]->printForCRN();
+            m[sorted[i]]->printForCRN(REUSABLE);
         }
 
         //Cross Validation to ensure no two gates will
