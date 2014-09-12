@@ -104,6 +104,21 @@ typedef class DNAMotif{
         }
         virtual void printForCRN(CIRCUIT_TYPE version=ONE_TIME){
            int conc = 100;
+           const int *TT_GATE;
+           switch(istype){
+               case NAND_MOTIF: TT_GATE = TT_NAND;
+                                break;
+               case AND_MOTIF: TT_GATE = TT_AND;
+                               break;
+               case OR_MOTIF: TT_GATE = TT_OR;
+                              break;
+               case NOR_MOTIF: TT_GATE = TT_NOR;
+                               break;
+               case NOT_MOTIF: TT_GATE = TT_NOT;
+                               break;
+               default: TT_GATE = TT_AND;
+           }
+
            if (version == REUSABLE){
                cout << "init " << gate(id[0],0) << id[0] << "0 " << conc << " |" << endl;
                cout << "init " << gate(id[0],1) << id[0] << "1 " << conc << " |" << endl;
@@ -113,23 +128,18 @@ typedef class DNAMotif{
                if(istype == STRAND_MOTIF)
                    return;
 
-               const int *TT_GATE;
-               switch(istype){
-                   case NAND_MOTIF: TT_GATE = TT_NAND;
-                                    break;
-                   case AND_MOTIF: TT_GATE = TT_AND;
-                                    break;
-                   case OR_MOTIF: TT_GATE = TT_OR;
-                                    break;
-                   case NOR_MOTIF: TT_GATE = TT_NOR;
-                                    break;
-                   case NOT_MOTIF: TT_GATE = TT_NOT;
-                                    break;
-                   default: return;
-               }
-
                if (istype == NOT_MOTIF){
                    for(int i=0;i<2;i++){
+                       cout << id[1] << TT_GATE[2*i] << " + " 
+                           << gate(id[0], TT_GATE[2*i+1]) << id[0] << TT_GATE[2*i+1] 
+                           << " -> {bi_forward} " << id[1] << TT_GATE[2*i] << gate(id[0], TT_GATE[2*i+1])
+                           << " + " << id[0] << TT_GATE[2*i+1]
+                           << " |" << endl;
+                       cout << gate(id[1], TT_GATE[2*i]) << " + " 
+                           << id[1] << TT_GATE[2*i] << gate(id[0],TT_GATE[2*i+1])
+                           << " -> {bi_forward} " << gate(id[1], TT_GATE[2*i]) << id[1] << TT_GATE[2*i]
+                           << " + " << gate(id[0],TT_GATE[2*i+1])
+                           << " |" << endl;
                    }
                }
                else{
@@ -148,6 +158,37 @@ typedef class DNAMotif{
                        << " -> {bi_forward} " << gate(id[2],TT_GATE[3*i+1]) << id[2] << TT_GATE[3*i+1] 
                        << " + " << id[1] << TT_GATE[3*i] << " + " << gate(id[0],TT_GATE[3*i+2]) << " |" << endl;
                }}
+           }
+           else if (version == ONE_TIME){
+               int multiplier = DNAMotif::getConcentrationMultiplier();
+               if(multiplier > 1){
+                   for(int j=0;j<2;j++){
+                       string tmp = "A";
+                       cout << id[0] << j << " -> {uni_forward} " << id[0] << tmp << j;
+                       for(int i=1;i<multiplier;i++){
+                           tmp[0]++;
+                           cout << " + " << id[0] << tmp << j;
+                       }
+                       cout << " |" << endl;
+                   }
+               }
+               cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} |" << endl;
+
+               if(istype == STRAND_MOTIF) return;
+               if(istype == NOT_MOTIF){
+                   for(int i=0;i<2;i++){
+                       cout << id[1] << TT_GATE[2*i] 
+                           << " -> {uni_forward} " 
+                           << id[0] << TT_GATE[2*i+1] << " |" << endl;
+                   }
+               }
+               else{
+                   for(int i=0;i<4;i++){
+                       cout << id[1] << TT_GATE[3*i] << " + " 
+                           << id[2] << TT_GATE[3*i+1] << " -> {bi_forward} " 
+                           << id[0] << TT_GATE[3*i+2] << " |" << endl;
+                   }
+               }
            }
            cerr << "in the dnamotif printforcrn" << endl;
         }
@@ -227,7 +268,6 @@ typedef class STRAND : public DNAMotif{
             cout << endl;
         }
 
-        /*
         void printForCRN_disabled(CIRCUIT_TYPE version = ONE_TIME){
            int conc = 100;
            int multiplier = DNAMotif::getConcentrationMultiplier();
@@ -237,26 +277,7 @@ typedef class STRAND : public DNAMotif{
                cout << "S_" << id << " + " << id << "0 -> {bi_forward} " << "3" << id << "0 |" << endl;
                cout << "S_" << id << " + " << id << "1 -> {bi_forward} " << "3" << id << "1 |" << endl;
            }
-           else if (version == ONE_TIME){
-               if(multiplier > 1){
-                   for(int j=0;j<2;j++){
-                       string tmp = "A";
-                       cout << id << j << " -> {uni_forward} " << id << tmp << j;
-                       for(int i=1;i<multiplier;i++){
-                           tmp[0]++;
-                           cout << " + " << id << tmp << j;
-                       }
-                       cout << " |" << endl;
-                   }
-               }
-               cout << id << "0 + " << id << "1 -> {bi_forward} |" << endl;
-           }
-           else if (version == REUSABLE){
-               cout << gate(id,0) << " + " << id << "0 -> {bi_forward} " << gate(id,0) << id << "0" << " |" << endl;
-               cout << gate(id,1) << " + " << id << "1 -> {bi_forward} " << gate(id,1) << id << "1" << " |" << endl;
-           }
         }
-        */
         
         string getDomain(int idx, TOEHOLD_TYPE type = NORMAL){
             if(name.size() <= idx){
@@ -476,47 +497,6 @@ typedef class NAND : public DNAMotif {
                cout << id[1] << "1 + " << id[2] << "0 + " << id[0] << "0 -> {tri_forward} " << id[0] << "1 |" << endl;
                cout << id[1] << "1 + " << id[2] << "1 + " << id[0] << "1 -> {tri_forward} " << id[0] << "0 |" << endl;
            }
-           else if (version == ONE_TIME){
-               if(multiplier > 1){
-                   for(int j=0;j<2;j++){
-                       string tmp = "A";
-                       cout << id[0] << j << " -> {uni_forward} " << id[0] << tmp << j;
-                       for(int i=1;i<multiplier;i++){
-                           tmp[0]++;
-                           cout << " + " << id[0] << tmp << j;
-                       }
-                       cout << " |" << endl;
-                   }
-               }
-               cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} |" << endl;
-               cout << id[1] << "0 + " << id[2] << "0 -> {bi_forward} " << id[0] << "1 |" << endl;
-               cout << id[1] << "0 + " << id[2] << "1 -> {bi_forward} " << id[0] << "1 |" << endl;
-               cout << id[1] << "1 + " << id[2] << "0 -> {bi_forward} " << id[0] << "1 |" << endl;
-               cout << id[1] << "1 + " << id[2] << "1 -> {bi_forward} " << id[0] << "0 |" << endl;
-           }
-           else if (version == REUSABLE){
-               cout << "init " << gate(id[0],0) << id[0] << "0 " << conc << " |" << endl;
-               cout << "init " << gate(id[0],1) << id[0] << "1 " << conc << " |" << endl;
-               cout << gate(id[0],0) << " + " << id[0] << "0 -> {bi_forward} " << gate(id[0],0) << id[0] << "0" << " |" << endl;
-               cout << gate(id[0],1) << " + " << id[0] << "1 -> {bi_forward} " << gate(id[0],1) << id[0] << "1" << " |" << endl;
-               const int *TT_GATE;
-               TT_GATE = TT_NAND;
-               for(int i=0;i<4;i++){
-                   cout << id[1] << TT_GATE[3*i] << " + " << id[2] << TT_GATE[3*i+1] << " + "
-                       << gate(id[0], TT_GATE[3*i+2]) << id[0] << TT_GATE[3*i+2] 
-                       << " -> {tri_forward} " << id[0] << TT_GATE[3*i+2] << " + "
-                       << intermediate(id[1],id[2],id[0],TT_GATE[3*i], TT_GATE[3*i+1], TT_GATE[3*i+2])
-                       << " |" << endl;
-                   cout << gate(id[1],TT_GATE[3*i]) << " + " 
-                       << intermediate(id[1],id[2],id[0],TT_GATE[3*i], TT_GATE[3*i+1], TT_GATE[3*i+2]) 
-                       << " -> {bi_forward} " << gate(id[1],TT_GATE[3*i]) << id[1] << TT_GATE[3*i] 
-                       << " + " << id[2] << TT_GATE[3*i+1] << " + " << gate(id[0],TT_GATE[3*i+2]) << " |" << endl;
-                   cout << gate(id[2],TT_GATE[3*i+1]) << " + " 
-                       << intermediate(id[1],id[2],id[0],TT_GATE[3*i], TT_GATE[3*i+1], TT_GATE[3*i+2]) 
-                       << " -> {bi_forward} " << gate(id[2],TT_GATE[3*i+1]) << id[2] << TT_GATE[3*i+1] 
-                       << " + " << id[1] << TT_GATE[3*i] << " + " << gate(id[0],TT_GATE[3*i+2]) << " |" << endl;
-               }
-           }
         }
 
         vector<STRAND> getStrands(void){
@@ -643,56 +623,6 @@ typedef class AND : public DNAMotif {
            cout << id[1] << "1 + " << id[2] << "0 + " << id[0] << "1 -> {tri_forward} " << id[0] << "0 |" << endl;
            cout << id[1] << "1 + " << id[2] << "1 + " << id[0] << "0 -> {tri_forward} " << id[0] << "1 |" << endl;
            }
-           else if (version == ONE_TIME){
-           if(multiplier > 1){
-               for(int j=0;j<2;j++){
-                    string tmp = "A";
-                    cout << id[0] << j << " -> {uni_forward} " << id[0] << tmp << j;
-                    for(int i=1;i<multiplier;i++){
-                       tmp[0]++;
-                       cout << " + " << id[0] << tmp << j;
-                    }
-                    cout << " |" << endl;
-               }
-           }
-           if(multiplier > 1){
-               string tmp = "A";
-               cout << id[0] << " -> {uni_forward} " << id[0] << tmp;
-               for(int i=1;i<multiplier;i++){
-                   tmp[0]++;
-                   cout << " + " << id[0] << tmp;
-               }
-               cout << " |" << endl;
-           }
-           cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} |" << endl;
-           cout << id[1] << "0 + " << id[2] << "0 -> {bi_forward} " << id[0] << "0 |" << endl;
-           cout << id[1] << "0 + " << id[2] << "1 -> {bi_forward} " << id[0] << "0 |" << endl;
-           cout << id[1] << "1 + " << id[2] << "0 -> {bi_forward} " << id[0] << "0 |" << endl;
-           cout << id[1] << "1 + " << id[2] << "1 -> {bi_forward} " << id[0] << "1 |" << endl;
-           }
-           else if (version == REUSABLE){
-               cout << "init " << gate(id[0],0) << id[0] << "0 " << conc << " |" << endl;
-               cout << "init " << gate(id[0],1) << id[0] << "1 " << conc << " |" << endl;
-               cout << gate(id[0],0) << " + " << id[0] << "0 -> {bi_forward} " << gate(id[0],0) << id[0] << "0" << " |" << endl;
-               cout << gate(id[0],1) << " + " << id[0] << "1 -> {bi_forward} " << gate(id[0],1) << id[0] << "1" << " |" << endl;
-               const int *TT_GATE;
-               TT_GATE = TT_AND;
-               for(int i=0;i<4;i++){
-                   cout << id[1] << TT_GATE[3*i] << " + " << id[2] << TT_GATE[3*i+1] << " + "
-                       << gate(id[0], TT_GATE[3*i+2]) << id[0] << TT_GATE[3*i+2] 
-                       << " -> {tri_forward} " << id[0] << TT_GATE[3*i+2] << " + "
-                       << intermediate(id[1],id[2],id[0],TT_GATE[3*i], TT_GATE[3*i+1], TT_GATE[3*i+2])
-                       << " |" << endl;
-                   cout << gate(id[1],TT_GATE[3*i]) << " + " 
-                       << intermediate(id[1],id[2],id[0],TT_GATE[3*i], TT_GATE[3*i+1], TT_GATE[3*i+2]) 
-                       << " -> {bi_forward} " << gate(id[1],TT_GATE[3*i]) << id[1] << TT_GATE[3*i] 
-                       << " + " << id[2] << TT_GATE[3*i+1] << " + " << gate(id[0],TT_GATE[3*i+2]) << " |" << endl;
-                   cout << gate(id[2],TT_GATE[3*i+1]) << " + " 
-                       << intermediate(id[1],id[2],id[0],TT_GATE[3*i], TT_GATE[3*i+1], TT_GATE[3*i+2]) 
-                       << " -> {bi_forward} " << gate(id[2],TT_GATE[3*i+1]) << id[2] << TT_GATE[3*i+1] 
-                       << " + " << id[1] << TT_GATE[3*i] << " + " << gate(id[0],TT_GATE[3*i+2]) << " |" << endl;
-               }
-           }
         }
 
         vector<STRAND> getStrands(void){
@@ -778,35 +708,6 @@ typedef class NOT : public DNAMotif {
             notStrand.printForDSD(motif);
         }
 
-        void printForCRN_disabled(CIRCUIT_TYPE version = ONE_TIME){
-           int conc = 100;
-           int multiplier = DNAMotif::getConcentrationMultiplier();
-           if(version == ONE_TIME){
-           cout << "init " << id[0] << "0 " << conc << " |" << endl;
-           cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} " << "S_" << id[0] << " |" << endl;
-           cout << "S_" << id[0] << " + " << id[0] << "0 -> {bi_forward} " << "3" << id[0] << "0 |" << endl;
-           cout << "S_" << id[0] << " + " << id[0] << "1 -> {bi_forward} " << "3" << id[0] << "1 |" << endl;
-           cout << id[1] << "0 + " << id[0] << "0 -> {bi_forward} " << id[0] << "1 |" << endl;
-           cout << id[1] << "1 + " << id[0] << "1 -> {bi_forward} " << id[0] << "0 |" << endl;
-           }
-           else if (version == REUSABLE){
-           if(multiplier > 1){
-               for(int j=0;j<2;j++){
-                    string tmp = "A";
-                    cout << id[0] << j << " -> {uni_forward} " << id[0] << tmp << j;
-                    for(int i=1;i<multiplier;i++){
-                       tmp[0]++;
-                       cout << " + " << id[0] << tmp << j;
-                    }
-                    cout << " |" << endl;
-               }
-           }
-           cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} |" << endl;
-           cout << id[1] << "0 -> {uni_forward} " << id[0] << "1 |" << endl;
-           cout << id[1] << "1 -> {uni_forward} " << id[0] << "0 |" << endl;
-           }
-        }
-
         vector<STRAND> getStrands(void){
             vector<STRAND> ret;
             ret.push_back(notStrand);
@@ -882,39 +783,6 @@ typedef class OR : public DNAMotif {
         void printForDSD(string motif="OR"){
         }
 
-        void printForCRN_disabled(CIRCUIT_TYPE version = ONE_TIME){
-           int conc = 100;
-           int multiplier = DNAMotif::getConcentrationMultiplier();
-           if(version == ONE_TIME){
-           cout << "init " << id[0] << "0 " << conc << " |" << endl;
-           cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} " << "S_" << id[0] << " |" << endl;
-           cout << "S_" << id[0] << " + " << id[0] << "0 -> {bi_forward} " << "3" << id[0] << "0 |" << endl;
-           cout << "S_" << id[0] << " + " << id[0] << "1 -> {bi_forward} " << "3" << id[0] << "1 |" << endl;
-           cout << id[1] << "0 + " << id[2] << "0 + " << id[0] << "1 -> {tri_forward} " << id[0] << "0 |" << endl;
-           cout << id[1] << "0 + " << id[2] << "1 + " << id[0] << "0 -> {tri_forward} " << id[0] << "1 |" << endl;
-           cout << id[1] << "1 + " << id[2] << "0 + " << id[0] << "0 -> {tri_forward} " << id[0] << "1 |" << endl;
-           cout << id[1] << "1 + " << id[2] << "1 + " << id[0] << "0 -> {tri_forward} " << id[0] << "1 |" << endl;
-           }
-           else if (version == REUSABLE){
-           if(multiplier > 1){
-               for(int j=0;j<2;j++){
-                    string tmp = "A";
-                    cout << id[0] << j << " -> {uni_forward} " << id[0] << tmp << j;
-                    for(int i=1;i<multiplier;i++){
-                       tmp[0]++;
-                       cout << " + " << id[0] << tmp << j;
-                    }
-                    cout << " |" << endl;
-               }
-           }
-           cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} |" << endl;
-           cout << id[1] << "0 + " << id[2] << "0 -> {bi_forward} " << id[0] << "0 |" << endl;
-           cout << id[1] << "0 + " << id[2] << "1 -> {bi_forward} " << id[0] << "1 |" << endl;
-           cout << id[1] << "1 + " << id[2] << "0 -> {bi_forward} " << id[0] << "1 |" << endl;
-           cout << id[1] << "1 + " << id[2] << "1 -> {bi_forward} " << id[0] << "1 |" << endl;
-           }
-        }
-
         vector<STRAND> getStrands(void){
             vector<STRAND> ret;
             return ret;
@@ -987,39 +855,6 @@ typedef class NOR : public DNAMotif {
                 << "X" << endl;
         }
         void printForDSD(string motif="NOR"){
-        }
-
-        void printForCRN_disabled(CIRCUIT_TYPE version = ONE_TIME){
-           int conc = 100;
-           int multiplier = DNAMotif::getConcentrationMultiplier();
-           if(version == ONE_TIME){
-           cout << "init " << id[0] << "0 " << conc << " |" << endl;
-           cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} " << "S_" << id[0] << " |" << endl;
-           cout << "S_" << id[0] << " + " << id[0] << "0 -> {bi_forward} " << "3" << id[0] << "0 |" << endl;
-           cout << "S_" << id[0] << " + " << id[0] << "1 -> {bi_forward} " << "3" << id[0] << "1 |" << endl;
-           cout << id[1] << "0 + " << id[2] << "0 + " << id[0] << "0 -> {tri_forward} " << id[0] << "1 |" << endl;
-           cout << id[1] << "0 + " << id[2] << "1 + " << id[0] << "1 -> {tri_forward} " << id[0] << "0 |" << endl;
-           cout << id[1] << "1 + " << id[2] << "0 + " << id[0] << "1 -> {tri_forward} " << id[0] << "0 |" << endl;
-           cout << id[1] << "1 + " << id[2] << "1 + " << id[0] << "1 -> {tri_forward} " << id[0] << "0 |" << endl;
-           }
-           else if (version == REUSABLE){
-           if(multiplier > 1){
-               for(int j=0;j<2;j++){
-                    string tmp = "A";
-                    cout << id[0] << j << " -> {uni_forward} " << id[0] << tmp << j;
-                    for(int i=1;i<multiplier;i++){
-                       tmp[0]++;
-                       cout << " + " << id[0] << tmp << j;
-                    }
-                    cout << " |" << endl;
-               }
-           }
-           cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} |" << endl;
-           cout << id[1] << "0 + " << id[2] << "0 -> {bi_forward} " << id[0] << "1 |" << endl;
-           cout << id[1] << "0 + " << id[2] << "1 -> {bi_forward} " << id[0] << "0 |" << endl;
-           cout << id[1] << "1 + " << id[2] << "0 -> {bi_forward} " << id[0] << "0 |" << endl;
-           cout << id[1] << "1 + " << id[2] << "1 -> {bi_forward} " << id[0] << "0 |" << endl;
-           }
         }
 
         vector<STRAND> getStrands(void){
@@ -1375,7 +1210,7 @@ int main(int argc, char *argv[])
             << "rate bi_forward = 1e-3;\n"
             << "rate tri_forward = 3e-5;\n";
         for(int i=0;i<n;i++){
-            m[sorted[i]]->printForCRN(REUSABLE);
+            m[sorted[i]]->printForCRN();
         }
 
         //Cross Validation to ensure no two gates will
