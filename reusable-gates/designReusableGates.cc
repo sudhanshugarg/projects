@@ -7,6 +7,12 @@
 #include<fstream>
 using namespace std;
 
+typedef class DNA {
+    public:
+        static const string sep;
+}DNA;
+
+const string DNA::sep = "-";
 enum MOTIF_TYPE { NAND_MOTIF, STRAND_MOTIF, DNA_MOTIF, 
     AND_MOTIF, OR_MOTIF, NOT_MOTIF, NOR_MOTIF};
 enum TOEHOLD_TYPE {NORMAL, DSD};
@@ -42,6 +48,7 @@ const int TT_NOT[] =
     {0,1,
     1,0};
 
+
 class STRAND;
 
 string gate (const string &s, const int &a){
@@ -61,8 +68,34 @@ string intermediate (
         const int &o){
     ostringstream oss;
     oss << input1 << i1;
+    oss << DNA::sep;
     oss << input2 << i2;
+    oss << DNA::sep;
     oss << "G" << output << o;
+    return oss.str();
+}
+
+string getFanOutDomainName(const string &domain, const int &fanOutPosn){
+    ostringstream oss;
+    oss << domain << "_" << fanOutPosn << "_";
+    return oss.str();
+}
+
+string fanOutOneTime(const string &domain, const int &multiplier){
+    ostringstream oss;
+    if(multiplier > 1){
+        for(int j=0;j<2;j++){
+            int count = 1;
+            oss << domain << j << " -> {uni_forward} " 
+                << getFanOutDomainName(domain, count) << j;
+            for(int i=1;i<multiplier;i++){
+                count++;
+                oss << " + " 
+                << getFanOutDomainName(domain, count) << j;
+            }
+            oss << " |" << endl;
+        }
+    }
     return oss.str();
 }
 
@@ -120,10 +153,10 @@ typedef class DNAMotif{
            }
 
            if (version == REUSABLE){
-               cout << "init " << gate(id[0],0) << id[0] << "0 " << conc << " |" << endl;
-               cout << "init " << gate(id[0],1) << id[0] << "1 " << conc << " |" << endl;
-               cout << gate(id[0],0) << " + " << id[0] << "0 -> {bi_forward} " << gate(id[0],0) << id[0] << "0" << " |" << endl;
-               cout << gate(id[0],1) << " + " << id[0] << "1 -> {bi_forward} " << gate(id[0],1) << id[0] << "1" << " |" << endl;
+               cout << "init " << gate(id[0],0) << DNA::sep << id[0] << "0 " << conc << " |" << endl;
+               cout << "init " << gate(id[0],1) << DNA::sep << id[0] << "1 " << conc << " |" << endl;
+               cout << gate(id[0],0) << " + " << id[0] << "0 -> {bi_forward} " << gate(id[0],0) << DNA::sep << id[0] << "0" << " |" << endl;
+               cout << gate(id[0],1) << " + " << id[0] << "1 -> {bi_forward} " << gate(id[0],1) << DNA::sep << id[0] << "1" << " |" << endl;
 
                if(istype == STRAND_MOTIF)
                    return;
@@ -131,13 +164,13 @@ typedef class DNAMotif{
                if (istype == NOT_MOTIF){
                    for(int i=0;i<2;i++){
                        cout << id[1] << TT_GATE[2*i] << " + " 
-                           << gate(id[0], TT_GATE[2*i+1]) << id[0] << TT_GATE[2*i+1] 
-                           << " -> {bi_forward} " << id[1] << TT_GATE[2*i] << gate(id[0], TT_GATE[2*i+1])
+                           << gate(id[0], TT_GATE[2*i+1]) << DNA::sep << id[0] << TT_GATE[2*i+1] 
+                           << " -> {bi_forward} " << id[1] << TT_GATE[2*i] << DNA::sep << gate(id[0], TT_GATE[2*i+1])
                            << " + " << id[0] << TT_GATE[2*i+1]
                            << " |" << endl;
                        cout << gate(id[1], TT_GATE[2*i]) << " + " 
-                           << id[1] << TT_GATE[2*i] << gate(id[0],TT_GATE[2*i+1])
-                           << " -> {bi_forward} " << gate(id[1], TT_GATE[2*i]) << id[1] << TT_GATE[2*i]
+                           << id[1] << TT_GATE[2*i] << DNA::sep << gate(id[0],TT_GATE[2*i+1])
+                           << " -> {bi_forward} " << gate(id[1], TT_GATE[2*i]) << DNA::sep << id[1] << TT_GATE[2*i]
                            << " + " << gate(id[0],TT_GATE[2*i+1])
                            << " |" << endl;
                    }
@@ -145,34 +178,23 @@ typedef class DNAMotif{
                else{
                for(int i=0;i<4;i++){
                    cout << id[1] << TT_GATE[3*i] << " + " << id[2] << TT_GATE[3*i+1] << " + "
-                       << gate(id[0], TT_GATE[3*i+2]) << id[0] << TT_GATE[3*i+2] 
+                       << gate(id[0], TT_GATE[3*i+2]) << DNA::sep << id[0] << TT_GATE[3*i+2] 
                        << " -> {tri_forward} " << id[0] << TT_GATE[3*i+2] << " + "
                        << intermediate(id[1],id[2],id[0],TT_GATE[3*i], TT_GATE[3*i+1], TT_GATE[3*i+2])
                        << " |" << endl;
                    cout << gate(id[1],TT_GATE[3*i]) << " + " 
                        << intermediate(id[1],id[2],id[0],TT_GATE[3*i], TT_GATE[3*i+1], TT_GATE[3*i+2]) 
-                       << " -> {bi_forward} " << gate(id[1],TT_GATE[3*i]) << id[1] << TT_GATE[3*i] 
+                       << " -> {bi_forward} " << gate(id[1],TT_GATE[3*i]) << DNA::sep << id[1] << TT_GATE[3*i] 
                        << " + " << id[2] << TT_GATE[3*i+1] << " + " << gate(id[0],TT_GATE[3*i+2]) << " |" << endl;
                    cout << gate(id[2],TT_GATE[3*i+1]) << " + " 
                        << intermediate(id[1],id[2],id[0],TT_GATE[3*i], TT_GATE[3*i+1], TT_GATE[3*i+2]) 
-                       << " -> {bi_forward} " << gate(id[2],TT_GATE[3*i+1]) << id[2] << TT_GATE[3*i+1] 
+                       << " -> {bi_forward} " << gate(id[2],TT_GATE[3*i+1]) << DNA::sep << id[2] << TT_GATE[3*i+1] 
                        << " + " << id[1] << TT_GATE[3*i] << " + " << gate(id[0],TT_GATE[3*i+2]) << " |" << endl;
                }}
            }
            else if (version == ONE_TIME){
-               int multiplier = DNAMotif::getConcentrationMultiplier();
-               if(multiplier > 1){
-                   for(int j=0;j<2;j++){
-                       string tmp = "A";
-                       cout << id[0] << j << " -> {uni_forward} " << id[0] << tmp << j;
-                       for(int i=1;i<multiplier;i++){
-                           tmp[0]++;
-                           cout << " + " << id[0] << tmp << j;
-                       }
-                       cout << " |" << endl;
-                   }
-               }
                cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} |" << endl;
+               cout << fanOutOneTime(id[0], DNAMotif::getConcentrationMultiplier());
 
                if(istype == STRAND_MOTIF) return;
                if(istype == NOT_MOTIF){
@@ -190,7 +212,6 @@ typedef class DNAMotif{
                    }
                }
            }
-           cerr << "in the dnamotif printforcrn" << endl;
         }
         virtual void constructFromInput(DNAMotif *I1, DNAMotif *I2, int f1=0, int f2=0){
             cout << "in the dnamotif construct from input " << endl;
@@ -211,6 +232,19 @@ typedef class DNAMotif{
 
     protected:
         string id[3];
+        void constructCRN(const string &id1, const string &id2, const int &f1, const int &f2){
+            if(f1){
+                id[1] = getFanOutDomainName(id1, f1);
+            }
+            else
+                id[1] = id1;
+
+            if(f2){
+                id[2] = getFanOutDomainName(id2, f2);
+            }
+            else
+                id[2] = id2;
+        }
 }DNAMotif;
 
 typedef class STRAND : public DNAMotif{
@@ -486,7 +520,6 @@ typedef class NAND : public DNAMotif {
 
         void printForCRN_disabled(CIRCUIT_TYPE version = ONE_TIME){
            int conc = 100;
-           int multiplier = DNAMotif::getConcentrationMultiplier();
            if(version == JIANG){
                cout << "init " << id[0] << "0 " << conc << " |" << endl;
                cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} " << "S_" << id[0] << " |" << endl;
@@ -516,26 +549,6 @@ typedef class NAND : public DNAMotif {
         STRAND gateStrand;
         STRAND notStrand;
 
-        void constructCRN(const string &id1, const string &id2, const int &f1, const int &f2){
-            string tmp;
-            if(f1){
-                tmp = "A";
-                tmp[0] += f1-1;
-                tmp = id1+tmp;
-                id[1] = tmp;
-            }
-            else
-                id[1] = id1;
-
-            if(f2){
-                tmp = "A";
-                tmp[0] += f2-1;
-                tmp = id2+tmp;
-                id[2] = tmp;
-            }
-            else
-                id[2] = id2;
-        }
 }NAND;
 
 typedef class AND : public DNAMotif {
@@ -612,7 +625,6 @@ typedef class AND : public DNAMotif {
 
         void printForCRN_disabled(CIRCUIT_TYPE version = ONE_TIME){
            int conc = 100;
-           int multiplier = DNAMotif::getConcentrationMultiplier();
            if(version == JIANG){
            cout << "init " << id[0] << "0 " << conc << " |" << endl;
            cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} " << "S_" << id[0] << " |" << endl;
@@ -640,26 +652,6 @@ typedef class AND : public DNAMotif {
         STRAND andStrand;
         STRAND gateStrand;
 
-        void constructCRN(const string &id1, const string &id2, const int &f1, const int &f2){
-            string tmp;
-            if(f1){
-                tmp = "A";
-                tmp[0] += f1-1;
-                tmp = id1+tmp;
-                id[1] = tmp;
-            }
-            else
-                id[1] = id1;
-
-            if(f2){
-                tmp = "A";
-                tmp[0] += f2-1;
-                tmp = id2+tmp;
-                id[2] = tmp;
-            }
-            else
-                id[2] = id2;
-        }
 }AND;
 
 typedef class NOT : public DNAMotif {
@@ -721,26 +713,6 @@ typedef class NOT : public DNAMotif {
     private:
         STRAND notStrand;
 
-        void constructCRN(const string &id1, const string &id2, const int &f1, const int &f2){
-            string tmp;
-            if(f1){
-                tmp = "A";
-                tmp[0] += f1-1;
-                tmp = id1+tmp;
-                id[1] = tmp;
-            }
-            else
-                id[1] = id1;
-
-            if(f2){
-                tmp = "A";
-                tmp[0] += f2-1;
-                tmp = id2+tmp;
-                id[2] = tmp;
-            }
-            else
-                id[2] = id2;
-        }
 }NOT;
 
 typedef class OR : public DNAMotif {
@@ -795,26 +767,6 @@ typedef class OR : public DNAMotif {
     private:
         STRAND tmpStrand;
 
-        void constructCRN(const string &id1, const string &id2, const int &f1, const int &f2){
-            string tmp;
-            if(f1){
-                tmp = "A";
-                tmp[0] += f1-1;
-                tmp = id1+tmp;
-                id[1] = tmp;
-            }
-            else
-                id[1] = id1;
-
-            if(f2){
-                tmp = "A";
-                tmp[0] += f2-1;
-                tmp = id2+tmp;
-                id[2] = tmp;
-            }
-            else
-                id[2] = id2;
-        }
 }OR;
 
 typedef class NOR : public DNAMotif {
@@ -869,66 +821,7 @@ typedef class NOR : public DNAMotif {
     private:
         STRAND tmpStrand;
 
-        void constructCRN(const string &id1, const string &id2, const int &f1, const int &f2){
-            string tmp;
-            if(f1){
-                tmp = "A";
-                tmp[0] += f1-1;
-                tmp = id1+tmp;
-                id[1] = tmp;
-            }
-            else
-                id[1] = id1;
-
-            if(f2){
-                tmp = "A";
-                tmp[0] += f2-1;
-                tmp = id2+tmp;
-                id[2] = tmp;
-            }
-            else
-                id[2] = id2;
-        }
 }NOR;
-
-/*
-void createInputTurberfield(int &nodes, vector<vector <int> > &g, map<int, DNAMotif*> &m){
-    //F = (X and Y) or (Y and not Z)
-    nodes = 8;
-
-    //4 nand gates, 3 inputs, 1 output
-    //0,1,2 are inputs
-    //3,4,5,6 are nands
-    //7 is output
-    g.resize(nodes);
-    for(int i=0;i<nodes;i++){
-        g[i].resize(nodes);
-        for(int j=0;j<nodes;j++){
-            g[i][j] = 0;
-        }
-    }
-
-    m[0] = new STRAND ("p1 x1 x2 x3 n1");
-    m[1] = new STRAND ("p2 y1 y2 y3 n2");
-    m[2] = new STRAND ("p3 z1 z2 z3 n3");
-    m[3] = new NAND;
-    m[4] = new NAND;
-    m[5] = new NAND;
-    m[6] = new NAND;
-    m[7] = new STRAND;
-
-    //m[0]->print();
-
-    g[0][3] = 1;
-    g[1][3] = 1;
-    g[1][5] = 1;
-    g[2][4] = 1;
-    g[3][6] = 1;
-    g[4][5] = 1;
-    g[5][6] = 1;
-    g[6][7] = 1;
-}
-*/
 
 void deleteInput(int &n, map<int, DNAMotif *> &m){
     for(int i=0;i<n;i++)
@@ -1128,38 +1021,6 @@ int main(int argc, char *argv[])
         }
         cout << "all edge weights have been assigned" << endl;
 
-        /*
-        for(int i=n-1;i>=0;i--){
-            //sorted[i] is the node which is being considered. 
-            //all nodes topologically after it already have their
-            //concentration multipliers set.
-            //
-
-
-            //concentration multiplier of this node
-            //is the sum of edge weights of all outgoing
-            //nodes.
-            int multiplier = 0;
-            for(int j=0;j<n;j++)
-                if(g[sorted[i]][j] != 0)
-                    multiplier += edgeWeights[sorted[i]][j];
-            
-
-            //incase the node doesn't have any output edges,
-            //set it to 1 by default.
-            if(multiplier < 1) multiplier = 1;
-
-            m[sorted[i]]->setConcentrationMultiplier(multiplier);
-
-            //set the reqd. conc. of all incoming edges to sorted[i], 
-            //as this multiplier
-            for(int j=0;j<n;j++)
-                if(g[j][sorted[i]] != 0)
-                    edgeWeights[j][sorted[i]] = multiplier;
-            cout << "looping around.." << endl;
-        }
-        */
-
         for(int i=0;i<n;i++){
             cout << "Motif no.: "<< sorted[i] << " #";
             m[sorted[i]]->printConcentration();
@@ -1209,8 +1070,16 @@ int main(int argc, char *argv[])
             << "rate uni_forward = 5e-2;\n"
             << "rate bi_forward = 1e-3;\n"
             << "rate tri_forward = 3e-5;\n";
+
+
+        //based on arguments.
+        CIRCUIT_TYPE circ = ONE_TIME;
+        if(argc > 2){
+            circ = REUSABLE;
+        }
+
         for(int i=0;i<n;i++){
-            m[sorted[i]]->printForCRN();
+            m[sorted[i]]->printForCRN(circ);
         }
 
         //Cross Validation to ensure no two gates will
