@@ -10,9 +10,13 @@ using namespace std;
 typedef class DNA {
     public:
         static const string sep;
+        static const string sep2;
+        static const int conc;
 }DNA;
 
 const string DNA::sep = "-";
+const string DNA::sep2 = "_";
+const int DNA::conc = 100;
 enum MOTIF_TYPE { NAND_MOTIF, STRAND_MOTIF, DNA_MOTIF, 
     AND_MOTIF, OR_MOTIF, NOT_MOTIF, NOR_MOTIF};
 enum TOEHOLD_TYPE {NORMAL, DSD};
@@ -99,6 +103,77 @@ string fanOutOneTime(const string &domain, const int &multiplier){
     return oss.str();
 }
 
+string fanOutReusable(const string &domain, const int &multiplier){
+    if(multiplier <= 1) return "";
+
+    ostringstream oss;
+    for(int j=0;j<2;j++){
+
+        //Set of forward reactions.
+        string dname = getFanOutDomainName(domain, 1);
+        oss << domain << j << " + "
+            << gate(dname,j) << DNA::sep 
+            << dname << j << DNA::sep
+            << dname << DNA::sep2 << j
+            << " -> "
+            << domain << j << DNA::sep
+            << gate(dname,j) << " + "
+            << dname << j << " + "
+            << dname << DNA::sep2 << j
+            << endl;
+
+        string next_dname;
+        for(int k=1; k<multiplier; k++){
+            next_dname = getFanOutDomainName(domain, k+1);
+
+            oss << "init "
+                << gate(dname,j) << DNA::sep 
+                << dname << j << DNA::sep
+                << dname << DNA::sep2 << j
+                << " " << DNA::conc << " |"
+                << endl;
+            oss << dname << DNA::sep2 << j << " + "
+                << gate(next_dname, j) << DNA::sep
+                << next_dname << j << DNA::sep
+                << next_dname << DNA::sep2 << j
+                << " -> "
+                << dname << DNA::sep2 << j << DNA::sep
+                << gate(next_dname, j) << " + "
+                << next_dname << j << " + "
+                << next_dname << DNA::sep2 << j
+                << endl;
+            dname = next_dname;
+        }
+        //Last species.
+        dname = getFanOutDomainName(domain, multiplier);
+        oss << "init "
+            << gate(dname,j) << DNA::sep 
+            << dname << j
+            << " " << DNA::conc << " |"
+            << endl;
+
+
+        //Set of reverse reactions.
+        dname = getFanOutDomainName(domain, 1);
+        for(int k=1; k<multiplier; k++){
+            next_dname = getFanOutDomainName(domain, k+1);
+            oss << gate(dname, j) << DNA::sep
+                << dname << j << " + "
+                << dname << DNA::sep2 << j << DNA::sep
+                << gate(next_dname, j)
+                << " -> "
+                << gate(dname, j) << DNA::sep
+                << dname << j << DNA::sep
+                << dname << DNA::sep2 << j << " + "
+                << gate(next_dname, j)
+                << endl;
+
+            dname = next_dname;
+        }
+    }
+    return oss.str();
+}
+
 typedef class DNAMotif{
     public:
         DNAMotif(){
@@ -157,6 +232,7 @@ typedef class DNAMotif{
                cout << "init " << gate(id[0],1) << DNA::sep << id[0] << "1 " << conc << " |" << endl;
                cout << gate(id[0],0) << " + " << id[0] << "0 -> {bi_forward} " << gate(id[0],0) << DNA::sep << id[0] << "0" << " |" << endl;
                cout << gate(id[0],1) << " + " << id[0] << "1 -> {bi_forward} " << gate(id[0],1) << DNA::sep << id[0] << "1" << " |" << endl;
+               cout << fanOutReusable(id[0], DNAMotif::getConcentrationMultiplier());
 
                if(istype == STRAND_MOTIF)
                    return;
