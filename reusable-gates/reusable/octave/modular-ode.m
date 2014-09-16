@@ -1,4 +1,4 @@
-function s = solveode(fn, init, tcalc, inIndex, inBits, outIndex, outBits, sequence)
+function s = solveode(fn, init, tcalc, inIndex, inBits, outIndex, outBits, sequence, leg)
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%index contains the position in init
@@ -41,23 +41,28 @@ function s = solveode(fn, init, tcalc, inIndex, inBits, outIndex, outBits, seque
         g = @(x,t) fn(x,t,kfit);
         try
             fitcalc = lsode(g, init, tcalc);
-            ops = {
-                'tcalc', 'fitcalc(:,14)', 'F0',
-                'tcalc', 'fitcalc(:,17)', 'F1'
-            };
-            hold on;
-            len = size(ops,1);
-            for i=1:len
-                plot(eval([ops{i,1}])+(j-1)*maxTime, eval([ops{i,2}]), 'color', plotColor(i,:));
-                leg{i} = ops{i,3};
-            endfor
-            legend(leg);
-            hold off;
-            init = fitcalc(maxTime,:);
         catch
-        printf("Error occured in lsode, continuing.\n");
-        myflush();
+            printf("Error occured in lsode, continuing.\n");
+            myflush();
         end_try_catch
+
+        ops = {};
+        for i=1:outBits
+            i0 = outIndex(4*(i-1)+1);
+            i1 = outIndex(4*(i-1)+2);
+            fit0 = fitcalc(:,i0);
+            fit1 = fitcalc(:,i1);
+
+            hold on;
+            plot(tcalc+(j-1)*maxTime, fit0, 'color', plotColor(2*i-1,:));
+            plot(tcalc+(j-1)*maxTime, fit1, 'color', plotColor(2*i,:));
+            lg{2*i-1} = leg{i0};
+            lg{2*i} = leg{i1};
+            legend(lg);
+            hold off;
+        endfor
+
+        init = fitcalc(maxTime,:);
 
     endfor
 
@@ -73,3 +78,10 @@ function s = solveode(fn, init, tcalc, inIndex, inBits, outIndex, outBits, seque
         print (filename, '-djpg');
         s=1;
 endfunction
+
+function [ret] = myflush()
+    fflush(stdout);
+    diary off;
+    diary on;
+endfunction
+
