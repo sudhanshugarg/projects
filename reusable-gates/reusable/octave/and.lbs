@@ -1,0 +1,29 @@
+directive sample 500.0 100
+
+rate uni_forward = 5e-2;
+rate bi_forward = 1e-3;
+rate tri_forward = 3e-5;
+init GB0-B0 100 |
+init GB1-B1 100 |
+GB0 + B0 -> {bi_forward} GB0-B0 |
+GB1 + B1 -> {bi_forward} GB1-B1 |
+init GC0-C0 100 |
+init GC1-C1 100 |
+GC0 + C0 -> {bi_forward} GC0-C0 |
+GC1 + C1 -> {bi_forward} GC1-C1 |
+init GF0-F0 100 |
+init GF1-F1 100 |
+GF0 + F0 -> {bi_forward} GF0-F0 |
+GF1 + F1 -> {bi_forward} GF1-F1 |
+B0 + C0 + GF0-F0 -> {tri_forward} F0 + B0-C0-GF0 |
+GB0 + B0-C0-GF0 -> {bi_forward} GB0-B0 + C0 + GF0 |
+GC0 + B0-C0-GF0 -> {bi_forward} GC0-C0 + B0 + GF0 |
+B0 + C1 + GF0-F0 -> {tri_forward} F0 + B0-C1-GF0 |
+GB0 + B0-C1-GF0 -> {bi_forward} GB0-B0 + C1 + GF0 |
+GC1 + B0-C1-GF0 -> {bi_forward} GC1-C1 + B0 + GF0 |
+B1 + C0 + GF0-F0 -> {tri_forward} F0 + B1-C0-GF0 |
+GB1 + B1-C0-GF0 -> {bi_forward} GB1-B1 + C0 + GF0 |
+GC0 + B1-C0-GF0 -> {bi_forward} GC0-C0 + B1 + GF0 |
+B1 + C1 + GF1-F1 -> {tri_forward} F1 + B1-C1-GF1 |
+GB1 + B1-C1-GF1 -> {bi_forward} GB1-B1 + C1 + GF1 |
+GC1 + B1-C1-GF1 -> {bi_forward} GC1-C1 + B1 + GF1
