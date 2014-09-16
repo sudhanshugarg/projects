@@ -120,7 +120,7 @@ string fanOutReusable(const string &domain, const int &multiplier){
             << gate(dname,j) << " + "
             << dname << j << " + "
             << dname << DNA::sep2 << j
-            << endl;
+            << " |" << endl;
 
         string next_dname;
         for(int k=1; k<multiplier; k++){
@@ -141,7 +141,7 @@ string fanOutReusable(const string &domain, const int &multiplier){
                 << gate(next_dname, j) << " + "
                 << next_dname << j << " + "
                 << next_dname << DNA::sep2 << j
-                << endl;
+                << " |" << endl;
             dname = next_dname;
         }
         //Last species.
@@ -166,7 +166,7 @@ string fanOutReusable(const string &domain, const int &multiplier){
                 << dname << j << DNA::sep
                 << dname << DNA::sep2 << j << " + "
                 << gate(next_dname, j)
-                << endl;
+                << " |" << endl;
 
             dname = next_dname;
         }
