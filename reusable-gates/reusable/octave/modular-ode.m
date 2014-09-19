@@ -18,8 +18,10 @@ function s = solveode(fn, init, tcalc, inIndex, inBits, outIndex, outBits, seque
     iter = length(sequence)/inBits;
 
     plotColor = rand(20,3);
+    marker = {'+','o','*','.','x','s','^','v'};
     kfit = 1;
     maxTime = tcalc(length(tcalc));
+    yshift = 10;
 
     %sequence refers to order of inputs. B is first input,
     %while C is the second input.
@@ -54,11 +56,12 @@ function s = solveode(fn, init, tcalc, inIndex, inBits, outIndex, outBits, seque
             fit1 = fitcalc(:,i1);
 
             hold on;
-            plot(tcalc+(j-1)*maxTime, fit0, 'color', plotColor(2*i-1,:));
-            plot(tcalc+(j-1)*maxTime, fit1, 'color', plotColor(2*i,:));
+            plot(tcalc+(j-1)*maxTime, fit0 + (i-1)*yshift, 'color', plotColor(2*i-1,:), 'marker', marker{2*i-1}, 'linewidth', 1);
+            plot(tcalc+(j-1)*maxTime, fit1 + (i-1)*yshift, 'color', plotColor(2*i,:), 'marker', marker{2*i}, 'linewidth', 1);
             lg{2*i-1} = leg{i0};
             lg{2*i} = leg{i1};
-            legend(lg);
+            legend(lg, 'location', 'southeast');
+            text(maxTime/2 + (j-1)*maxTime, 105, strcat(int2str(sequence(inBits*(j-1)+1: inBits*(j)))));
             hold off;
         endfor
 
@@ -70,13 +73,17 @@ function s = solveode(fn, init, tcalc, inIndex, inBits, outIndex, outBits, seque
    %PLOT DATA
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
    i = 1;
-       i++;
-        ax = gca();
-        set(ax, 'fontsize', 15);
-        filename = round(time() - 1400000000);
-        filename = [num2str(filename) '.jpg']
-        print (filename, '-djpg');
-        s=1;
+   i++;
+%   text(maxTime/2, 105, strcat(int2str(sequence(1:inBits))));
+   xlabel("time(secs)","fontweight","bold");
+   ylabel("conc(nM)","fontweight","bold");
+   ax = gca();
+   set(ax,"fontweight","bold","linewidth",2);
+   set(ax, 'fontsize', 15);
+   filename = round(time() - 1400000000);
+   filename = [num2str(filename) '.jpg']
+   print (filename, '-djpg', '-F:Helvetica:12');
+   s=1;
 endfunction
 
 function [ret] = myflush()
