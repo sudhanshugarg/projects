@@ -1,4 +1,4 @@
-function s = solveode(fn, init, tcalc, inIndex, inBits, outIndex, outBits, sequence, leg)
+function s = solveode(fn, init, tcalc, inIndex, inBits, inMultiplier, outIndex, outBits, sequence, leg)
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%index contains the position in init
@@ -30,11 +30,11 @@ function s = solveode(fn, init, tcalc, inIndex, inBits, outIndex, outBits, seque
         if(j>1)
             for k=inBits-1:-1:0
                 if(sequence(inBits*j-k) > sequence(inBits*(j-1)-k))% change to A1
-                    init(inIndex(4*(bit-1)+3)) += 100; %GA0
-                    init(inIndex(4*(bit-1)+2)) += 100; %A1
+                    init(inIndex(4*(bit-1)+1)) += inMultiplier(bit)*100; %GA0
+                    init(inIndex(4*(bit-1)+4)) += inMultiplier(bit)*100; %A1
                 elseif(sequence(inBits*j-k) < sequence(inBits*(j-1)-k))% change to A0
-                    init(inIndex(4*(bit-1)+4)) += 100; %GA1
-                    init(inIndex(4*(bit-1)+1)) += 100; %A0
+                    init(inIndex(4*(bit-1)+3)) += inMultiplier(bit)*100; %GA1
+                    init(inIndex(4*(bit-1)+2)) += inMultiplier(bit)*100; %A0
                 endif
                 bit++;
             endfor
@@ -50,8 +50,8 @@ function s = solveode(fn, init, tcalc, inIndex, inBits, outIndex, outBits, seque
 
         ops = {};
         for i=1:outBits
-            i0 = outIndex(4*(i-1)+1);
-            i1 = outIndex(4*(i-1)+2);
+            i0 = outIndex(4*(i-1)+2);
+            i1 = outIndex(4*(i-1)+4);
             fit0 = fitcalc(:,i0);
             fit1 = fitcalc(:,i1);
 

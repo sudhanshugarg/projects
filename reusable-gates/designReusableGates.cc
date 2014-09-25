@@ -5,6 +5,7 @@
 #include<string.h>
 #include<sstream>
 #include<fstream>
+#include<unistd.h>
 using namespace std;
 
 typedef class DNA {
@@ -12,11 +13,15 @@ typedef class DNA {
         static const string sep;
         static const string sep2;
         static const int conc;
+        static bool fanOutEnabled;
+        static bool reusable;
 }DNA;
 
 const string DNA::sep = "-";
 const string DNA::sep2 = "_";
 const int DNA::conc = 100;
+bool DNA::fanOutEnabled = false;
+bool DNA::reusable = false;
 enum MOTIF_TYPE { NAND_MOTIF, STRAND_MOTIF, DNA_MOTIF, 
     AND_MOTIF, OR_MOTIF, NOT_MOTIF, NOR_MOTIF};
 enum TOEHOLD_TYPE {NORMAL, DSD};
@@ -103,7 +108,7 @@ string fanOutOneTime(const string &domain, const int &multiplier){
     return oss.str();
 }
 
-string fanOutReusable(const string &domain, const int &multiplier){
+string fanOutANDReusable(const string &domain, const int &multiplier, const int &conc){
     if(multiplier <= 1) return "";
 
     ostringstream oss;
@@ -115,7 +120,7 @@ string fanOutReusable(const string &domain, const int &multiplier){
             << gate(dname,j) << DNA::sep 
             << dname << j << DNA::sep
             << dname << DNA::sep2 << j
-            << " " << DNA::conc << " |"
+            << " " << conc << " |"
             << endl;
         oss << domain << j << " + "
             << gate(dname,j) << DNA::sep 
@@ -136,7 +141,7 @@ string fanOutReusable(const string &domain, const int &multiplier){
                 << gate(next_dname,j) << DNA::sep 
                 << next_dname << j << DNA::sep
                 << next_dname << DNA::sep2 << j
-                << " " << DNA::conc << " |"
+                << " " << conc << " |"
                 << endl;
             oss << dname << DNA::sep2 << j << " + "
                 << gate(next_dname, j) << DNA::sep
@@ -156,7 +161,7 @@ string fanOutReusable(const string &domain, const int &multiplier){
         oss << "init "
             << gate(next_dname,j) << DNA::sep 
             << next_dname << j
-            << " " << DNA::conc << " |"
+            << " " << conc << " |"
             << endl;
         oss << dname << DNA::sep2 << j << " + "
             << gate(next_dname,j) << DNA::sep 
@@ -202,8 +207,10 @@ typedef class DNAMotif{
     public:
         DNAMotif(){
             istype = DNA_MOTIF;
+            // fan out multiplier - default 0
+            fanCount = 0;
             //concentration multiplier - default 1
-            concX = 0;
+            concX = 1;
             return;
         }
         MOTIF_TYPE getType(void){
@@ -213,16 +220,24 @@ typedef class DNAMotif{
             istype = type;
         }
 
-        void setConcentrationMultiplier(int m){
-            concX = m;
+        void setFanOutMultiplier(int m){
+            fanCount = m;
         }
 
-        int getConcentrationMultiplier(void){
-            return concX;
+        int getFanOutMultiplier(void){
+            return fanCount;
         }
 
         void incrementMultiplier(void){
-            concX++;
+            fanCount++;
+        }
+
+        void setConcMultiplier(int m){
+            concX = m;
+        }
+
+        int getConcMultiplier(void){
+            return concX;
         }
 
         virtual string getID(void){
@@ -235,7 +250,7 @@ typedef class DNAMotif{
             cout << "in the dnamotif printfordsd" << endl;
         }
         virtual void printForCRN(CIRCUIT_TYPE version=ONE_TIME){
-           int conc = 100;
+           int conc;
            const int *TT_GATE;
            switch(istype){
                case NAND_MOTIF: TT_GATE = TT_NAND;
@@ -254,10 +269,19 @@ typedef class DNAMotif{
            if (version == REUSABLE){
                cout << gate(id[0],0) << " + " << id[0] << "0 -> {bi_forward} " << gate(id[0],0) << DNA::sep << id[0] << "0" << " |" << endl;
                cout << gate(id[0],1) << " + " << id[0] << "1 -> {bi_forward} " << gate(id[0],1) << DNA::sep << id[0] << "1" << " |" << endl;
-               cout << fanOutReusable(id[0], DNAMotif::getConcentrationMultiplier());
 
-               if(istype == STRAND_MOTIF)
+               if (DNA::fanOutEnabled){
+                  conc = DNA::conc;
+                  cout << fanOutANDReusable(id[0], DNAMotif::getFanOutMultiplier(), conc);
+               }
+               else{
+                  conc = DNA::conc * DNAMotif::getConcMultiplier();
+               }
+
+               if(istype == STRAND_MOTIF){
+                   cout << "init " << id[0] << "0 " << conc << " |" << endl;
                    return;
+               }
 
                cout << "init " << gate(id[0],0) << DNA::sep << id[0] << "0 " << conc << " |" << endl;
                cout << "init " << gate(id[0],1) << DNA::sep << id[0] << "1 " << conc << " |" << endl;
@@ -294,10 +318,16 @@ typedef class DNAMotif{
                }}
            }
            else if (version == ONE_TIME){
-               cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} |" << endl;
-               cout << fanOutOneTime(id[0], DNAMotif::getConcentrationMultiplier());
+               if (DNA::fanOutEnabled){
+                   cout << fanOutOneTime(id[0], DNAMotif::getFanOutMultiplier());
+                   conc = DNA::conc;
+               }
+               else conc = DNA::conc * DNAMotif::getConcMultiplier();
 
-               if(istype == STRAND_MOTIF) return;
+               if(istype == STRAND_MOTIF){
+                   cout << "init " << id[0] << "0 " << conc << " |" << endl;
+                   return;
+               }
                if(istype == NOT_MOTIF){
                    for(int i=0;i<2;i++){
                        cout << id[1] << TT_GATE[2*i] 
@@ -329,6 +359,7 @@ typedef class DNAMotif{
 
     private:
         MOTIF_TYPE istype;
+        int fanCount;
         int concX;
 
     protected:
@@ -387,7 +418,7 @@ typedef class STRAND : public DNAMotif{
             cout << endl;
         }
         void printConcentration(void){
-            cout << "Concentration: " << DNAMotif::getConcentrationMultiplier()
+            cout << "Concentration: " << DNAMotif::getConcMultiplier()
                 << "X" << endl;
         }
         void printForDSD(string motif = "STRAND"){
@@ -404,8 +435,8 @@ typedef class STRAND : public DNAMotif{
         }
 
         void printForCRN_disabled(CIRCUIT_TYPE version = ONE_TIME){
-           int conc = 100;
-           int multiplier = DNAMotif::getConcentrationMultiplier();
+           int conc = DNA::conc;
+           int multiplier = DNAMotif::getFanOutMultiplier();
            cout << "init " << id << "0 " << conc << " |" << endl;
            if(version == JIANG){
                cout << id << "0 + " << id << "1 -> {bi_forward} " << "S_" << id << " |" << endl;
@@ -596,7 +627,7 @@ typedef class NAND : public DNAMotif {
             notStrand.print();
         }
         void printConcentration(void){
-            cout << "Conc: " << DNAMotif::getConcentrationMultiplier()
+            cout << "Conc: " << DNAMotif::getConcMultiplier()
                 << "X" << endl;
         }
         void printForDSD(string motif="AND"){
@@ -620,7 +651,7 @@ typedef class NAND : public DNAMotif {
         }
 
         void printForCRN_disabled(CIRCUIT_TYPE version = ONE_TIME){
-           int conc = 100;
+           int conc = DNA::conc;
            if(version == JIANG){
                cout << "init " << id[0] << "0 " << conc << " |" << endl;
                cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} " << "S_" << id[0] << " |" << endl;
@@ -703,7 +734,7 @@ typedef class AND : public DNAMotif {
             gateStrand.print();
         }
         void printConcentration(void){
-            cout << "Conc: " << DNAMotif::getConcentrationMultiplier()
+            cout << "Conc: " << DNAMotif::getConcMultiplier()
                 << "X" << endl;
         }
         void printForDSD(string motif="AND"){
@@ -725,7 +756,7 @@ typedef class AND : public DNAMotif {
         }
 
         void printForCRN_disabled(CIRCUIT_TYPE version = ONE_TIME){
-           int conc = 100;
+           int conc = DNA::conc;
            if(version == JIANG){
            cout << "init " << id[0] << "0 " << conc << " |" << endl;
            cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} " << "S_" << id[0] << " |" << endl;
@@ -793,7 +824,7 @@ typedef class NOT : public DNAMotif {
             notStrand.print();
         }
         void printConcentration(void){
-            cout << "Conc: " << DNAMotif::getConcentrationMultiplier()
+            cout << "Conc: " << DNAMotif::getConcMultiplier()
                 << "X" << endl;
         }
         void printForDSD(string motif="NOT"){
@@ -850,7 +881,7 @@ typedef class OR : public DNAMotif {
         void print(void){
         }
         void printConcentration(void){
-            cout << "Conc: " << DNAMotif::getConcentrationMultiplier()
+            cout << "Conc: " << DNAMotif::getConcMultiplier()
                 << "X" << endl;
         }
         void printForDSD(string motif="OR"){
@@ -904,7 +935,7 @@ typedef class NOR : public DNAMotif {
         void print(void){
         }
         void printConcentration(void){
-            cout << "Conc: " << DNAMotif::getConcentrationMultiplier()
+            cout << "Conc: " << DNAMotif::getConcMultiplier()
                 << "X" << endl;
         }
         void printForDSD(string motif="NOR"){
@@ -929,10 +960,13 @@ void deleteInput(int &n, map<int, DNAMotif *> &m){
         delete m[i];
 }
 
-void createInputFile(int &nodes, map<int, int> &names, vector<vector <int> > &g, map<int, DNAMotif*> &m, char* filename){
+int createInputFile(int &nodes, map<int, int> &names, vector<vector <int> > &g, map<int, DNAMotif*> &m, char* filename){
     ifstream inputfile;
     inputfile.open(filename);
-    if(!inputfile) cout << "Error in file:" << filename << endl;
+    if(!inputfile) {
+        cout << "Error in file:" << filename << endl;
+        return 0;
+    }
     string nodesStr;
     std::getline(inputfile, nodesStr);
     istringstream issN(nodesStr);
@@ -1026,12 +1060,24 @@ void createInputFile(int &nodes, map<int, int> &names, vector<vector <int> > &g,
                 edgeIss >> e1 >> e2;
                 if(g[names[e1]][names[e2]] != 1){
                     g[names[e1]][names[e2]] = 1;
-                    m[names[e1]]->incrementMultiplier();
                 }
             }
         }
     }
+    
+    //setting fanout multiplier for each motif.
+    //if a motif does not have an out edge, its 
+    //fan out by default is 1, and is left unchanged.
+    int count = 0;
+    for(int i=0;i<nodes;i++){
+        count = 0;
+        for(int j=0;j<nodes;j++)
+            if(g[i][j]) count++;
+        if(count)
+            m[i]->setFanOutMultiplier(count);
+    }
     inputfile.close();
+    return 1;
 }
 
 void topologicalSort (vector<vector <int > > &g, vector<int> &ret){
@@ -1065,6 +1111,10 @@ void topologicalSort (vector<vector <int > > &g, vector<int> &ret){
     return;
 }
 
+void print_usage(void){
+    cout << "Usage: ./a.out -f <enable fanout> -r <enable reusable> [file]"
+        << endl;
+}
 
 int main(int argc, char *argv[])
 {
@@ -1075,7 +1125,25 @@ int main(int argc, char *argv[])
         map<int, DNAMotif* > m;
         map<int, int> names;
         cout << argv[1] << endl;
-        createInputFile(n, names, g, m, argv[1]);
+
+        char c;
+        while ((c = getopt (argc, argv, "fr")) != -1)
+            switch (c)
+            {
+                case 'f':
+                    DNA::fanOutEnabled = true;
+                    break;
+                case 'r':
+                    DNA::reusable = true;
+                    break;
+                default:
+                    print_usage();
+                    return -1;
+            }
+        
+        if(!createInputFile(n, names, g, m, argv[optind])){
+            return -1;
+        }
 
         vector<int> sorted;
         sorted.clear();
@@ -1102,13 +1170,23 @@ int main(int argc, char *argv[])
                     fanOut[j]++;
                 }
             }
-            if(ct == 2)
-                m[sorted[i]]->constructFromInput(input[0], input[1], 
-                        m[index[0]]->getConcentrationMultiplier()>1?fanOut[index[0]]:0, 
-                        m[index[1]]->getConcentrationMultiplier()>1?fanOut[index[1]]:0);
-            else if (ct == 1)
-                m[sorted[i]]->constructFromInput(input[0], input[0], 
-                        m[index[0]]->getConcentrationMultiplier()>1?fanOut[index[0]]:0);
+            if(ct == 2){
+                if(!DNA::fanOutEnabled)
+                    m[sorted[i]]->constructFromInput(input[0], input[1]);
+                else {
+                    m[sorted[i]]->constructFromInput(input[0], input[1], 
+                        m[index[0]]->getFanOutMultiplier()>1?fanOut[index[0]]:0, 
+                        m[index[1]]->getFanOutMultiplier()>1?fanOut[index[1]]:0);
+                }
+            }
+            else if (ct == 1){
+                if(!DNA::fanOutEnabled)
+                    m[sorted[i]]->constructFromInput(input[0], input[0]);
+                else{
+                    m[sorted[i]]->constructFromInput(input[0], input[0], 
+                        m[index[0]]->getFanOutMultiplier()>1?fanOut[index[0]]:0);
+                }
+            }
         }
 
         //Figuring out the concentration multiplier per motif.
@@ -1121,9 +1199,19 @@ int main(int argc, char *argv[])
                 edgeWeights[a][b] = 0;
         }
         cout << "all edge weights have been assigned" << endl;
+        int concMult = 0;
+        for(int i=n-1;i>=0;i--){
+            //sorted[i] is 1x concentration.
+            concMult = 0;
+            for(int j=0;j<n;j++)
+                if(g[sorted[i]][j])
+                    concMult += m[j]->getConcMultiplier();
+            if(concMult)
+                m[sorted[i]]->setConcMultiplier(concMult);
+        }
 
         for(int i=0;i<n;i++){
-            cout << "Motif no.: "<< sorted[i] << " #";
+            cout << "Motif no.: "<< m[sorted[i]]->getID() << " #";
             m[sorted[i]]->printConcentration();
             cout << endl;
         }
@@ -1140,7 +1228,7 @@ int main(int argc, char *argv[])
             if(m[sorted[i]]->getType() == STRAND_MOTIF){
                 oss << "INPUT_" << sorted[i];
                 oss_conc << "| "
-                    << m[sorted[i]]->getConcentrationMultiplier()*100
+                    << m[sorted[i]]->getFanOutMultiplier()*DNA::conc
                     << "*"
                     << "INPUT_"
                     << sorted[i]
@@ -1149,13 +1237,13 @@ int main(int argc, char *argv[])
             else if(m[sorted[i]]->getType() == NAND_MOTIF){
                 oss << "NAND_" << sorted[i];
                 oss_conc << "| "
-                    << m[sorted[i]]->getConcentrationMultiplier()*100
+                    << m[sorted[i]]->getFanOutMultiplier()*DNA::conc
                     << "*"
                     << "NAND_"
                     << sorted[i]
                     << "()\n";
                 oss_conc << "| "
-                    << m[sorted[i]]->getConcentrationMultiplier()*100
+                    << m[sorted[i]]->getFanOutMultiplier()*DNA::conc
                     << "*"
                     << "NOT_NAND_"
                     << sorted[i]
@@ -1175,7 +1263,7 @@ int main(int argc, char *argv[])
 
         //based on arguments.
         CIRCUIT_TYPE circ = ONE_TIME;
-        if(argc > 2){
+        if(DNA::reusable){
             circ = REUSABLE;
         }
 
