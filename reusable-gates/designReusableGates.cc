@@ -795,9 +795,9 @@ typedef class AND : public DNAMotif {
         //from a 2-input gate.
         string getDomain(int bit, int idx, TOEHOLD_TYPE type = NORMAL){
             if(bit == 1)
-                return andStrand[4].getDomain(bit, idx, type);
+                return andStrand[3].getDomain(bit, idx, type);
 
-            return andStrand[0].getDomain(bit, idx, type);
+            return andStrand[3].getDomain(bit, idx, type);
         }
 
         string getComplementDomain (int bit, int idx){
@@ -892,21 +892,39 @@ typedef class NOT : public DNAMotif {
         void constructFromInput(DNAMotif *I1, DNAMotif *I2, int f1=0, int f2=0){
             cout << "for gates " << I1->getID() <<
                 ", the nums are : " << f1 << endl;
+            string ids[2];
+            ids[0] = id[0] + "0";
+            ids[1] = id[0] + "1";
             //notStrand
-            notStrand.push(I1->getComplementDomain(3));
-            notStrand.push(I1->getComplementDomain(2));
-            notStrand.push(I1->getComplementDomain(1));
-            notStrand.push(STRAND::getNewDomain(PREFIX2));
+            for(int bit=0;bit<2;bit++){
+                notStrand[bit].push(I1->getDomain(-1,2));
+                notStrand[bit].push(I1->getDomain(-1,3));
+                notStrand[bit].push(ids[!bit]);
+
+                if(bit == 0){
+                    notStrand[bit].push(STRAND::getNewDomain(DOMAINPREFIX));
+                    notStrand[bit].push(STRAND::getNewDomain(DOMAINPREFIX));
+                }
+                else{
+                    notStrand[bit].push(notStrand[0].getDomain(-1,3));
+                    notStrand[bit].push(notStrand[0].getDomain(-1,4));
+                }
+
+                gateStrand[bit].push(notStrand[bit].getComplementDomain(-1,2));
+                gateStrand[bit].push(notStrand[bit].getComplementDomain(-1,1));
+                gateStrand[bit].push(notStrand[bit].getComplementDomain(-1,0));
+                gateStrand[bit].push(I1->getComplementDomain(-1,1));
+            }
 
             constructCRN(I1->getID(), "", f1, f2);
         }
 
         string getDomain(int bit, int idx, TOEHOLD_TYPE type = NORMAL){
-            return notStrand.getDomain(bit, idx, type);
+            return notStrand[bit].getDomain(-1, idx, type);
         }
 
         string getComplementDomain (int bit, int idx){
-            return notStrand.getComplementDomain(bit, idx);
+            return notStrand[bit].getComplementDomain(-1, idx);
         }
 
         void print(void){
@@ -921,8 +939,25 @@ typedef class NOT : public DNAMotif {
                 << "X" << endl;
         }
         void printForDSD(string motif="NOT"){
-            motif = "NOT_" + motif;
-            notStrand.printForDSD(motif);
+            motif = "NOT_" + id[0] + "_0";
+
+            for(int i=0;i<2;i++){
+                motif[motif.length()-1] += i;
+                cout << "def " 
+                    << motif
+                    << "() = {"
+                    << gateStrand[i].getDomain(-1,3, DSD) 
+                    << "}["
+                    << notStrand[i].getDomain(-1,0,DSD) << " "
+                    << notStrand[i].getDomain(-1,1,DSD) << " "
+                    << notStrand[i].getDomain(-1,2,DSD)
+                    << "]{"
+                    << notStrand[i].getDomain(-1,3, DSD) << " "
+                    << notStrand[i].getDomain(-1,4, DSD) 
+                    << "}"
+                    << endl;
+                motif[motif.length()-1] -= i;
+            }
         }
 
         vector<STRAND> getStrands(void){
@@ -944,6 +979,7 @@ typedef class NOT : public DNAMotif {
 
 }NOT;
 
+/*
 typedef class OR : public DNAMotif {
     public:
         OR(){}
@@ -1130,7 +1166,7 @@ int createInputFile(int &nodes, map<int, int> &names, vector<vector <int> > &g, 
             istringstream iss(line);
             while(iss >> num){
                 names[num] = ct;
-                //m[ct] = new NOT(num);
+                m[ct] = new NOT(num);
                 ct++;
             }
         }
