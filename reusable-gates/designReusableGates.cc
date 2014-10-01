@@ -587,11 +587,12 @@ typedef class BIT : public DNAMotif{
         }
 
         void printForDSD(string motif = "BIT"){
-            cout << "def " 
-                << motif
-                << "() = < ";
-            s[0]->printForDSD();
-            s[1]->printForDSD();
+            string name0, name1;
+            name0 = "INPUT_" + id[0] + "_0";
+            name1 = "INPUT_" + id[0] + "_1";
+
+            s[0]->printForDSD(name0);
+            s[1]->printForDSD(name1);
         }
 
         string getDomain(int bit, int idx, TOEHOLD_TYPE type = NORMAL){
@@ -822,23 +823,26 @@ typedef class AND : public DNAMotif {
 
         void printForDSD(string motif="AND"){
 
-            for(int i=0;i<4;i++){
-            cout << "def " 
-                << motif
-                << "() = {"
-                << gateStrand[i].getDomain(0,6, DSD) 
-                << "}["
-                << andStrand[i].getDomain(0,0,DSD)
-                << andStrand[i].getDomain(0,1,DSD)
-                << andStrand[i].getDomain(0,2,DSD)
-                << andStrand[i].getDomain(0,3,DSD)
-                << andStrand[i].getDomain(0,4,DSD)
-                << "]{"
-                << gateStrand[i].getDomain(0,0, DSD) 
-                << "}"
-                << endl;
-            }
+            motif = "AND_" + id[0] + "_0";
 
+            for(int i=0;i<4;i++){
+                motif[motif.length()-1] += i;
+                cout << "def " 
+                    << motif
+                    << "() = {"
+                    << gateStrand[i].getDomain(0,6, DSD) 
+                    << "}["
+                    << andStrand[i].getDomain(0,0,DSD) << " "
+                    << andStrand[i].getDomain(0,1,DSD) << " "
+                    << andStrand[i].getDomain(0,2,DSD) << " "
+                    << andStrand[i].getDomain(0,3,DSD) << " "
+                    << andStrand[i].getDomain(0,4,DSD)
+                    << "]{"
+                    << gateStrand[i].getDomain(0,0, DSD) 
+                    << "}"
+                    << endl;
+                motif[motif.length()-1] -= i;
+            }
         }
 
         /*
@@ -876,7 +880,6 @@ typedef class AND : public DNAMotif {
 
 }AND;
 
-/*
 typedef class NOT : public DNAMotif {
     public:
         NOT(){}
@@ -884,10 +887,6 @@ typedef class NOT : public DNAMotif {
             DNAMotif::setType(NOT_MOTIF);
             id[0] = "A";
             id[0][0] += num;
-        }
-
-        STRAND getNot(void){
-            return notStrand;
         }
 
         void constructFromInput(DNAMotif *I1, DNAMotif *I2, int f1=0, int f2=0){
@@ -902,17 +901,20 @@ typedef class NOT : public DNAMotif {
             constructCRN(I1->getID(), "", f1, f2);
         }
 
-        string getDomain(int idx, TOEHOLD_TYPE type = NORMAL){
-            return notStrand.getDomain(idx, type);
+        string getDomain(int bit, int idx, TOEHOLD_TYPE type = NORMAL){
+            return notStrand.getDomain(bit, idx, type);
         }
 
-        string getComplementDomain (int idx){
-            return notStrand.getComplementDomain(idx);
+        string getComplementDomain (int bit, int idx){
+            return notStrand.getComplementDomain(bit, idx);
         }
 
         void print(void){
-            cout << "notStrand:: ";
-            notStrand.print();
+            cout << "notStrand:: " << endl;
+            for(int i=0;i<2;i++){
+                notStrand[i].print();
+                gateStrand[i].print();
+            }
         }
         void printConcentration(void){
             cout << "Conc: " << DNAMotif::getConcMultiplier()
@@ -925,7 +927,10 @@ typedef class NOT : public DNAMotif {
 
         vector<STRAND> getStrands(void){
             vector<STRAND> ret;
-            ret.push_back(notStrand);
+            for(int i=0;i<2;i++){
+                ret.push_back(notStrand[i]);
+                ret.push_back(gateStrand[i]);
+            }
             return ret;
         }
 
@@ -934,7 +939,8 @@ typedef class NOT : public DNAMotif {
         }
 
     private:
-        STRAND notStrand;
+        STRAND notStrand[2];
+        STRAND gateStrand[2];
 
 }NOT;
 
