@@ -228,11 +228,16 @@ void DNAMotif::printConcentration(void){
         << "X" << endl;
 }
 
+string DNAMotif::getDSDName(int num){
+    string motif = getGatePrefix[istype] + "_" + id[0] + "_0";
+    motif[motif.length()-1] += num;
+    return motif;
+}
+
 void DNAMotif::printForDSD(string motif){
 
-    motif = getGatePrefix[istype] + "_" + id[0] + "_0";
     for(int i=0;i<4;i++){
-        motif[motif.length()-1] += i;
+        motif = getDSDName(i);
         cout << "def " 
             << motif
             << "() = {"
@@ -247,10 +252,22 @@ void DNAMotif::printForDSD(string motif){
             << gateStrand[i]->getDomain(0,0, DSD) 
             << "}"
             << endl;
-        motif[motif.length()-1] -= i;
     }
 
     cerr << "in the dnamotif printfordsd" << endl;
+}
+
+void DNAMotif::printForDSDWithConc(void){
+
+    string motif;
+    for(int i=0;i<4;i++){
+        motif = getDSDName(i);
+        cout << "| " 
+            << DNA::conc * DNAMotif::getConcMultiplier()
+            << " * "
+            << motif
+            << endl;
+    }
 }
 
 void printGate(const int *t){
@@ -296,7 +313,8 @@ void DNAMotif::printForCRN(CIRCUIT_TYPE version){
             conc = DNA::conc * DNAMotif::getConcMultiplier();
         }
 
-        if(istype == STRAND_MOTIF){
+        //initialize bit 0 by default.
+        if(istype == BIT_MOTIF){
             cout << "init " << id[0] << "0 " << conc << " |" << endl;
             return;
         }
@@ -515,17 +533,6 @@ void STRAND::printForDSD(string motif){
     cout << endl;
 }
 
-void STRAND::printForCRN_disabled(CIRCUIT_TYPE version){
-    int conc = DNA::conc;
-    int multiplier = DNAMotif::getFanOutMultiplier();
-    cout << "init " << id << "0 " << conc << " |" << endl;
-    if(version == JIANG){
-        cout << id << "0 + " << id << "1 -> {bi_forward} " << "S_" << id << " |" << endl;
-        cout << "S_" << id << " + " << id << "0 -> {bi_forward} " << "3" << id << "0 |" << endl;
-        cout << "S_" << id << " + " << id << "1 -> {bi_forward} " << "3" << id << "1 |" << endl;
-    }
-}
-
 string STRAND::getDomain(int bit, int idx, TOEHOLD_TYPE type){
     cerr << "in strand getdomain" << endl;
     if(name.size() <= idx){
@@ -657,18 +664,23 @@ typedef class BIT : public DNAMotif{
             s[1]->print();
         }
 
-        void printConcentration(void){
-            cout << "Concentration: " << DNAMotif::getConcMultiplier()
-                << "X" << endl;
+        void printForDSD(string motif = "BIT"){
+            for(int i=0;i<2;i++){
+                motif = getDSDName(i);
+                s[i]->printForDSD(motif);
+            }
         }
 
-        void printForDSD(string motif = "BIT"){
-            string name0, name1;
-            name0 = "INPUT_" + id[0] + "_0";
-            name1 = "INPUT_" + id[0] + "_1";
-
-            s[0]->printForDSD(name0);
-            s[1]->printForDSD(name1);
+        void printForDSDWithConc(void){
+            string motif;
+            for(int i=0;i<2;i++){
+                motif = getDSDName(i);
+                cout << "| " 
+                    << DNA::conc * DNAMotif::getConcMultiplier()
+                    << " * "
+                    << motif
+                    << endl;
+            }
         }
 
         string getDomain(int bit, int idx, TOEHOLD_TYPE type = NORMAL){
@@ -711,22 +723,6 @@ typedef class BI_INPUT : public DNAMotif {
                 gateStrand[i] = new STRAND(num);
             }
         }
-
-        /*
-        void printForCRN_disabled(CIRCUIT_TYPE version = ONE_TIME){
-           int conc = DNA::conc;
-           if(version == JIANG){
-           cout << "init " << id[0] << "0 " << conc << " |" << endl;
-           cout << id[0] << "0 + " << id[0] << "1 -> {bi_forward} " << "S_" << id[0] << " |" << endl;
-           cout << "S_" << id[0] << " + " << id[0] << "0 -> {bi_forward} " << "3" << id[0] << "0 |" << endl;
-           cout << "S_" << id[0] << " + " << id[0] << "1 -> {bi_forward} " << "3" << id[0] << "1 |" << endl;
-           cout << id[1] << "0 + " << id[2] << "0 + " << id[0] << "1 -> {tri_forward} " << id[0] << "0 |" << endl;
-           cout << id[1] << "0 + " << id[2] << "1 + " << id[0] << "1 -> {tri_forward} " << id[0] << "0 |" << endl;
-           cout << id[1] << "1 + " << id[2] << "0 + " << id[0] << "1 -> {tri_forward} " << id[0] << "0 |" << endl;
-           cout << id[1] << "1 + " << id[2] << "1 + " << id[0] << "0 -> {tri_forward} " << id[0] << "1 |" << endl;
-           }
-        }
-        */
 
 }BI_INPUT;
 
@@ -792,15 +788,10 @@ typedef class NOT : public DNAMotif {
                 gateStrand[i]->print();
             }
         }
-        void printConcentration(void){
-            cout << "Conc: " << DNAMotif::getConcMultiplier()
-                << "X" << endl;
-        }
-        void printForDSD(string motif="NOT"){
-            motif = "NOT_" + id[0] + "_0";
+        void printForDSD(string motif){
 
             for(int i=0;i<2;i++){
-                motif[motif.length()-1] += i;
+                motif = DNAMotif::getDSDName(i);
                 cout << "def " 
                     << motif
                     << "() = {"
@@ -814,7 +805,18 @@ typedef class NOT : public DNAMotif {
                     << andStrand[i]->getDomain(-1,4, DSD) 
                     << "}"
                     << endl;
-                motif[motif.length()-1] -= i;
+            }
+        }
+
+        void printForDSDWithConc(void){
+            string motif;
+            for(int i=0;i<2;i++){
+                motif = DNAMotif::getDSDName(i);
+                cout << "| " 
+                    << DNA::conc * DNAMotif::getConcMultiplier()
+                    << " * "
+                    << motif
+                    << endl;
             }
         }
 
@@ -1108,43 +1110,20 @@ int main(int argc, char *argv[])
             cout << endl;
         }
 
-        cout << "directive sample 50000.0 100\n"
+        cout << "directive sample 500.0 100\n"
             << "directive scale 100.0\n\n"
             << "def TMP() = <tmp>\n";
 
 
-        ostringstream oss_conc;
-        oss_conc << "( 1*TMP()\n";
         for(int i=0;i<n;i++){
-            ostringstream oss;
-            if(m[sorted[i]]->getType() == STRAND_MOTIF){
-                oss << "INPUT_" << sorted[i];
-                oss_conc << "| "
-                    << m[sorted[i]]->getFanOutMultiplier()*DNA::conc
-                    << "*"
-                    << "INPUT_"
-                    << sorted[i]
-                    << "()\n";
-            }
-            else if(m[sorted[i]]->getType() == NAND_MOTIF){
-                oss << "NAND_" << sorted[i];
-                oss_conc << "| "
-                    << m[sorted[i]]->getFanOutMultiplier()*DNA::conc
-                    << "*"
-                    << "NAND_"
-                    << sorted[i]
-                    << "()\n";
-                oss_conc << "| "
-                    << m[sorted[i]]->getFanOutMultiplier()*DNA::conc
-                    << "*"
-                    << "NOT_NAND_"
-                    << sorted[i]
-                    << "()\n";
-            }
-            m[sorted[i]]->printForDSD(oss.str());
+            m[sorted[i]]->printForDSD();
         }
-        oss_conc << ")";
-        cout << oss_conc.str() << endl;
+
+        cout << "( 1*TMP()" << endl;;
+        for(int i=0;i<n;i++){
+            m[sorted[i]]->printForDSDWithConc();
+        }
+        cout << ")" << endl;
 
         cout << "Printing in CRN - for checking with LBS" << endl;
         cout << "directive sample 500.0 100\n\n"

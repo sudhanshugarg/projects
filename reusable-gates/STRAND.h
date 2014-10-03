@@ -77,7 +77,9 @@ typedef class DNAMotif{
         virtual string getID(void);
         virtual void print(void);
         virtual void printConcentration(void);
+        virtual string getDSDName(int num = 0);
         virtual void printForDSD(string motif = "GATE");
+        virtual void printForDSDWithConc(void);
         virtual void printForCRN(CIRCUIT_TYPE version=ONE_TIME);
         virtual void constructFromInput(DNAMotif *I1, DNAMotif *I2, int f1=0, int f2=0);
         virtual string getDomain(int bit, int idx, TOEHOLD_TYPE type = NORMAL);
@@ -106,7 +108,6 @@ typedef class STRAND : public DNAMotif{
         void print(void);
         void printConcentration(void);
         void printForDSD(string motif = "STRAND");
-        void printForCRN_disabled(CIRCUIT_TYPE version = ONE_TIME);
         string getDomain(int bit, int idx, TOEHOLD_TYPE type = NORMAL);
         string getComplementDomain (int bit, int idx);
         void push(string s);
