@@ -746,24 +746,26 @@ typedef class NOT : public DNAMotif {
             //then the "bit" should be passed to it. Whenever these two methods
             //are called instead on a strand directly, the bit argument does not
             //matter, and to denote this, a -1 is being passed.
+            //
+            //Also note, the 0 input creates the not motif 1, and vice versa.
             for(int bit=0;bit<2;bit++){
-                andStrand[bit]->push(I1->getDomain(bit,2));
-                andStrand[bit]->push(I1->getDomain(bit,3));
-                andStrand[bit]->push(ids[!bit]);
+                andStrand[!bit]->push(I1->getDomain(bit,2));
+                andStrand[!bit]->push(I1->getDomain(bit,3));
+                andStrand[!bit]->push(ids[!bit]);
 
                 if(bit == 0){
-                    andStrand[bit]->push(STRAND::getNewDomain(DOMAINPREFIX));
-                    andStrand[bit]->push(STRAND::getNewDomain(DOMAINPREFIX));
+                    andStrand[!bit]->push(STRAND::getNewDomain(DOMAINPREFIX));
+                    andStrand[!bit]->push(STRAND::getNewDomain(DOMAINPREFIX));
                 }
                 else{
-                    andStrand[bit]->push(andStrand[0]->getDomain(-1,3));
-                    andStrand[bit]->push(andStrand[0]->getDomain(-1,4));
+                    andStrand[!bit]->push(andStrand[1]->getDomain(-1,3));
+                    andStrand[!bit]->push(andStrand[1]->getDomain(-1,4));
                 }
 
-                gateStrand[bit]->push(andStrand[bit]->getComplementDomain(-1,2));
-                gateStrand[bit]->push(andStrand[bit]->getComplementDomain(-1,1));
-                gateStrand[bit]->push(andStrand[bit]->getComplementDomain(-1,0));
-                gateStrand[bit]->push(I1->getComplementDomain(bit,1));
+                gateStrand[!bit]->push(andStrand[!bit]->getComplementDomain(-1,2));
+                gateStrand[!bit]->push(andStrand[!bit]->getComplementDomain(-1,1));
+                gateStrand[!bit]->push(andStrand[!bit]->getComplementDomain(-1,0));
+                gateStrand[!bit]->push(I1->getComplementDomain(bit,1));
             }
 
             constructCRN(I1->getID(), "", f1, f2);
