@@ -539,7 +539,6 @@ string STRAND::getDomain(int bit, int idx, TOEHOLD_TYPE type){
         throw "REQUEST FOR INDEX NOT PRESENT IN STRAND";
     }
 
-
     string suffix="";
     if(type == DSD)
         suffix = "^";
@@ -655,19 +654,19 @@ typedef class BIT : public DNAMotif{
             DNAMotif::setType(BIT_MOTIF);
             id[0] = "A";
             id[0][0] += num;
-            s[0] = new STRAND(s0,num);
-            s[1] = new STRAND(s1,num);
+            andStrand[0] = new STRAND(s0,num);
+            andStrand[1] = new STRAND(s1,num);
         }
 
         void print(void){
-            s[0]->print();
-            s[1]->print();
+            for(int i=0;i<2;i++)
+                andStrand[i]->print();
         }
 
         void printForDSD(string motif = "BIT"){
             for(int i=0;i<2;i++){
                 motif = getDSDName(i);
-                s[i]->printForDSD(motif);
+                andStrand[i]->printForDSD(motif);
             }
         }
 
@@ -688,25 +687,22 @@ typedef class BIT : public DNAMotif{
                 throw "REQUEST FOR INPUT INVALID ";
 
             cerr << "in bit getdomain" << endl;
-            return s[bit]->getDomain(bit, idx, type);
+            return andStrand[bit]->getDomain(bit, idx, type);
         }
 
         string getComplementDomain (int bit, int idx){
             if(bit != 0 && bit != 1)
                 throw "REQUEST FOR INPUT INVALID ";
 
-            return s[bit]->getComplementDomain(bit, idx);
+            return andStrand[bit]->getComplementDomain(bit, idx);
         }
 
         vector<STRAND> getStrands(void){
             vector<STRAND> ret;
-            ret.push_back(*s[0]);
-            ret.push_back(*s[1]);
+            for(int i=0;i<2;i++)
+                ret.push_back(*andStrand[i]);
             return ret;
         }
-
-    private:
-        STRAND *s[2];
 }BIT;
 
 map<string, int> STRAND::nextNumber;

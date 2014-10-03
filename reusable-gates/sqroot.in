@@ -7,10 +7,14 @@ not
 5 9 14
 input
 0 4 8 12
-p1 x1 x2 x3 n1
-p2 y1 y2 y3 n2
-p3 z1 z2 z3 n3
-p4 w1 w2 w3 n4
+a1 x2 x0 x3 d1
+a1 x2 x1 x3 d1
+a2 y2 y0 y3 d2
+a2 y2 y1 y3 d2
+a3 z2 z0 z3 d3
+a3 z2 z1 z3 d3
+a4 w2 w0 w3 d4
+a4 w2 w1 w3 d4
 edges
 0 1
 0 7

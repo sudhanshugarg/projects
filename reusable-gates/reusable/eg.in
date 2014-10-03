@@ -1,6 +1,8 @@
-3
-and
+4
+nor
 5
+not
+6
 # input center domains are defined by the gate, hence only 4 other domains
 # need be defined by us.
 input
@@ -12,3 +14,4 @@ a2 y2 y1 y3 c2
 edges
 0 5
 1 5
+5 6

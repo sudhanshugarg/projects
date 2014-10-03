@@ -7,9 +7,12 @@ not
 9
 input
 23 24 25
-p1 x1 x2 x3 n1
-p2 y1 y2 y3 n2
-p3 z1 z2 z3 n3
+a1 x2 x0 x3 d1
+a1 x2 x1 x3 d1
+a2 y2 y0 y3 d2
+a2 y2 y1 y3 d2
+a3 z2 z0 z3 d3
+a3 z2 z1 z3 d3
 edges
 23 8
 24 8
