@@ -28,6 +28,8 @@ enum TOEHOLD_TYPE {NORMAL, DSD};
 enum CIRCUIT_TYPE {ONE_TIME, REUSABLE, JIANG};
 const string DOMAINPREFIX = "c";
 const string PREFIX2 = "k";
+
+
 //TT == TRUTH_TABLE
 const int TT_NAND[] = 
     {0,0,1,
@@ -57,6 +59,9 @@ const int TT_NOT[] =
     {0,1,
     1,0};
 
+map<MOTIF_TYPE, string> getGatePrefix;
+map<MOTIF_TYPE, const int*> getTruthTable;
+
 class STRAND;
 
 typedef class DNAMotif{
@@ -69,7 +74,6 @@ typedef class DNAMotif{
         void incrementMultiplier(void);
         void setConcMultiplier(int m);
         int getConcMultiplier(void);
-        void getGate(const int *t);
         virtual string getID(void);
         virtual void print(void);
         virtual void printConcentration(void);
