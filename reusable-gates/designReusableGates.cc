@@ -5,456 +5,854 @@
 #include<string.h>
 #include<sstream>
 #include<fstream>
+#include<unistd.h>
+#include "STRAND.h"
 using namespace std;
 
-enum MOTIF_TYPE { NAND_MOTIF, STRAND_MOTIF, DNA_MOTIF, AND_MOTIF };
-enum TOEHOLD_TYPE {NORMAL, DSD};
-const string DOMAINPREFIX = "c";
-const string PREFIX2 = "k";
+class BIT;
 
-class STRAND;
+string gate (const string &s, const int &a){
+    ostringstream oss;
+    oss << "G";
+    oss << s;
+    oss << a;
+    return oss.str();
+}
 
-typedef class DNAMotif{
-    public:
-        DNAMotif(){
-            istype = DNA_MOTIF;
-            //concentration multiplier - default 1
-            concX = 1;
+string intermediate (
+        const string &input1, 
+        const string &input2, 
+        const string &output, 
+        const int &i1,
+        const int &i2,
+        const int &o){
+    ostringstream oss;
+    oss << input1 << i1;
+    oss << DNA::sep;
+    oss << input2 << i2;
+    oss << DNA::sep;
+    oss << "G" << output << o;
+    return oss.str();
+}
+
+string getFanOutDomainName(const string &domain, const int &fanOutPosn){
+    ostringstream oss;
+    oss << domain << "_" << fanOutPosn << "_";
+    return oss.str();
+}
+
+string fanOutOneTime(const string &domain, const int &multiplier){
+    ostringstream oss;
+    if(multiplier > 1){
+        for(int j=0;j<2;j++){
+            int count = 1;
+            oss << domain << j << " -> {uni_forward} " 
+                << getFanOutDomainName(domain, count) << j;
+            for(int i=1;i<multiplier;i++){
+                count++;
+                oss << " + " 
+                << getFanOutDomainName(domain, count) << j;
+            }
+            oss << " |" << endl;
+        }
+    }
+    return oss.str();
+}
+
+string fanOutANDReusable(const string &domain, const int &multiplier, const int &conc){
+    if(multiplier <= 1) return "";
+
+    ostringstream oss;
+    for(int j=0;j<2;j++){
+
+        //Set of forward reactions.
+        string dname = getFanOutDomainName(domain, 1);
+        oss << "init "
+            << gate(dname,j) << DNA::sep 
+            << dname << j << DNA::sep
+            << dname << DNA::sep2 << j
+            << " " << conc << " |"
+            << endl;
+        oss << domain << j << " + "
+            << gate(dname,j) << DNA::sep 
+            << dname << j << DNA::sep
+            << dname << DNA::sep2 << j
+            << " -> "
+            << domain << j << DNA::sep
+            << gate(dname,j) << " + "
+            << dname << j << " + "
+            << dname << DNA::sep2 << j
+            << " |" << endl;
+
+        string next_dname;
+        for(int k=1; k<multiplier-1; k++){
+            next_dname = getFanOutDomainName(domain, k+1);
+
+            oss << "init "
+                << gate(next_dname,j) << DNA::sep 
+                << next_dname << j << DNA::sep
+                << next_dname << DNA::sep2 << j
+                << " " << conc << " |"
+                << endl;
+            oss << dname << DNA::sep2 << j << " + "
+                << gate(next_dname, j) << DNA::sep
+                << next_dname << j << DNA::sep
+                << next_dname << DNA::sep2 << j
+                << " -> "
+                << dname << DNA::sep2 << j << DNA::sep
+                << gate(next_dname, j) << " + "
+                << next_dname << j << " + "
+                << next_dname << DNA::sep2 << j
+                << " |" << endl;
+            dname = next_dname;
+        }
+        //Last species.
+        dname = getFanOutDomainName(domain, multiplier-1);
+        next_dname = getFanOutDomainName(domain, multiplier);
+        oss << "init "
+            << gate(next_dname,j) << DNA::sep 
+            << next_dname << j
+            << " " << conc << " |"
+            << endl;
+        oss << dname << DNA::sep2 << j << " + "
+            << gate(next_dname,j) << DNA::sep 
+            << next_dname << j
+            << " -> "
+            << dname << DNA::sep2 << j << DNA::sep
+            << gate(next_dname,j) << " + "
+            << next_dname << j 
+            << " |" << endl;
+
+
+        //Set of reverse reactions.
+        dname = getFanOutDomainName(domain, 1);
+
+        oss << gate(domain,j) << " + "
+            << domain << j << DNA::sep
+            << gate(dname,j)
+            << " -> "
+            << gate(domain, j) << DNA::sep
+            << domain << j << " + "
+            << gate(dname,j)
+            << " |" << endl;
+        for(int k=1; k<multiplier; k++){
+            next_dname = getFanOutDomainName(domain, k+1);
+            oss << gate(dname, j) << DNA::sep
+                << dname << j << " + "
+                << dname << DNA::sep2 << j << DNA::sep
+                << gate(next_dname, j)
+                << " -> "
+                << gate(dname, j) << DNA::sep
+                << dname << j << DNA::sep
+                << dname << DNA::sep2 << j << " + "
+                << gate(next_dname, j)
+                << " |" << endl;
+
+            dname = next_dname;
+        }
+    }
+    return oss.str();
+}
+
+
+//Initialize global variables
+void initialize(void){
+    getGatePrefix[AND_MOTIF] = "AND";
+    getGatePrefix[NAND_MOTIF] = "NAND";
+    getGatePrefix[OR_MOTIF] = "OR";
+    getGatePrefix[NOR_MOTIF] = "NOR";
+    getGatePrefix[BIT_MOTIF] = "BIT";
+    getGatePrefix[NOT_MOTIF] = "NOT";
+
+    getTruthTable[AND_MOTIF] = TT_AND;
+    getTruthTable[NAND_MOTIF] = TT_NAND;
+    getTruthTable[OR_MOTIF] = TT_OR;
+    getTruthTable[NOR_MOTIF] = TT_NOR;
+    getTruthTable[BIT_MOTIF] = NULL;
+    getTruthTable[NOT_MOTIF] = TT_NOT;
+}
+
+//DNAMotif methods
+
+DNAMotif::DNAMotif(){
+    istype = DNA_MOTIF;
+    // fan out multiplier - default 0
+    fanCount = 0;
+    //concentration multiplier - default 1
+    concX = 1;
+    return;
+}
+MOTIF_TYPE DNAMotif::getType(void){
+    return istype;
+}
+void DNAMotif::setType(MOTIF_TYPE type){
+    istype = type;
+}
+
+void DNAMotif::setFanOutMultiplier(int m){
+    fanCount = m;
+}
+
+int DNAMotif::getFanOutMultiplier(void){
+    return fanCount;
+}
+
+void DNAMotif::incrementMultiplier(void){
+    fanCount++;
+}
+
+void DNAMotif::setConcMultiplier(int m){
+    concX = m;
+}
+
+int DNAMotif::getConcMultiplier(void){
+    return concX;
+}
+
+string DNAMotif::getID(void){
+    return id[0];
+    cerr << "in the dnamotif getID" << endl;
+}
+
+void DNAMotif::print(void){
+    cout << "2inputAndStrand:: ";
+    for(int i=0;i<4;i++)
+        andStrand[i]->print();
+    cout << "gateStrand:: ";
+    for(int i=0;i<4;i++)
+        gateStrand[i]->print();
+}
+
+void DNAMotif::printConcentration(void){
+    cout << "Conc: " << DNAMotif::getConcMultiplier()
+        << "X" << endl;
+}
+
+string DNAMotif::getDSDName(int num){
+    string motif = getGatePrefix[istype] + "_" + id[0] + "_0";
+    motif[motif.length()-1] += num;
+    return motif;
+}
+
+void DNAMotif::printForDSD(string motif){
+
+    for(int i=0;i<4;i++){
+        motif = getDSDName(i);
+        cout << "def " 
+            << motif
+            << "() = {"
+            << gateStrand[i]->getDomain(0,6, DSD) 
+            << "}["
+            << andStrand[i]->getDomain(0,0,DSD) << " "
+            << andStrand[i]->getDomain(0,1,DSD) << " "
+            << andStrand[i]->getDomain(0,2,DSD) << " "
+            << andStrand[i]->getDomain(0,3,DSD) << " "
+            << andStrand[i]->getDomain(0,4,DSD)
+            << "]{"
+            << gateStrand[i]->getDomain(0,0, DSD) 
+            << "}"
+            << endl;
+    }
+
+    cerr << "in the dnamotif printfordsd" << endl;
+}
+
+void DNAMotif::printForDSDWithConc(void){
+
+    string motif;
+    for(int i=0;i<4;i++){
+        motif = getDSDName(i);
+        cout << "| " 
+            << DNA::conc * DNAMotif::getConcMultiplier()
+            << " * "
+            << motif
+            << endl;
+    }
+}
+
+void printGate(const int *t){
+
+    for(int i=0;i<4;i++){
+        for(int j=0;j<3;j++){
+            cout << t[3*i+j] << ",";
+        }
+        cout << endl;
+    }
+}
+
+void DNAMotif::printForCRN(CIRCUIT_TYPE version){
+    int conc;
+    const int *TT_GATE;
+    /*
+    TT_GATE = getTruthTable[istype];
+    */
+    switch(istype){
+        case NAND_MOTIF: TT_GATE = TT_NAND;
+                         break;
+        case AND_MOTIF: TT_GATE = TT_AND;
+                        break;
+        case OR_MOTIF: TT_GATE = TT_OR;
+                       break;
+        case NOR_MOTIF: TT_GATE = TT_NOR;
+                        break;
+        case NOT_MOTIF: TT_GATE = TT_NOT;
+                        break;
+        default: TT_GATE = TT_AND;
+    }
+    //printGate(TT_GATE);
+
+    if (version == REUSABLE){
+        cout << gate(id[0],0) << " + " << id[0] << "0 -> {bi_forward} " << gate(id[0],0) << DNA::sep << id[0] << "0" << " |" << endl;
+        cout << gate(id[0],1) << " + " << id[0] << "1 -> {bi_forward} " << gate(id[0],1) << DNA::sep << id[0] << "1" << " |" << endl;
+
+        if (DNA::fanOutEnabled){
+            conc = DNA::conc;
+            cout << fanOutANDReusable(id[0], DNAMotif::getFanOutMultiplier(), conc);
+        }
+        else{
+            conc = DNA::conc * DNAMotif::getConcMultiplier();
+        }
+
+        //initialize bit 0 by default.
+        if(istype == BIT_MOTIF){
+            cout << "init " << id[0] << "0 " << conc << " |" << endl;
             return;
         }
-        MOTIF_TYPE getType(void){
-            return istype;
-        }
-        void setType(MOTIF_TYPE type){
-            istype = type;
-        }
 
-        void setConcentrationMultiplier(int m){
-            concX = m;
-        }
+        cout << "init " << gate(id[0],0) << DNA::sep << id[0] << "0 " << conc << " |" << endl;
+        cout << "init " << gate(id[0],1) << DNA::sep << id[0] << "1 " << conc << " |" << endl;
 
-        int getConcentrationMultiplier(void){
-            return concX;
-        }
-
-        virtual void print(void){}
-        virtual void printConcentration(void){}
-        virtual void printForDSD(string motif = "GATE"){
-            cout << "in the dnamotif printfordsd" << endl;
-        }
-        virtual void constructFromInput(DNAMotif *I1, DNAMotif *I2, int version=1){
-            cout << "in the dnamotif construct from input " << endl;
-        }
-        virtual string getDomain(int idx, TOEHOLD_TYPE type = NORMAL){
-            cout << "in the dnamotif getDomain " << endl;
-        }
-        virtual string getComplementDomain(int idx){
-            cout << "in the dnamotif getComplementDomain " << endl;
-        }
-        virtual vector<STRAND> getStrands(void){
-            cout << "in the dnamotif getStrands " << endl;
-        }
-
-    private:
-        MOTIF_TYPE istype;
-        int concX;
-}DNAMotif;
-
-typedef class STRAND : public DNAMotif{
-    public:
-        STRAND(){
-            DNAMotif::setType(STRAND_MOTIF);
-        }
-        
-        STRAND(vector<string> s){
-            DNAMotif::setType(STRAND_MOTIF);
-            createFromVector(s);
-        }
-
-        STRAND(const string &s){
-            init(s);
-        }
-
-        void init(const string &s){
-            DNAMotif::setType(STRAND_MOTIF);
-            char *tokens = new char[s.length()+1];
-            s.copy(tokens,s.length(),0);
-            tokens[s.length()] = '\0';
-
-            vector<string> doms;
-            char *token = strtok(tokens, " \t");
-            while(token != NULL){
-                doms.push_back(token);
-                token = strtok(NULL, " \t");
+        if (istype == NOT_MOTIF){
+            for(int i=0;i<2;i++){
+                cout << id[1] << TT_GATE[2*i] << " + " 
+                    << gate(id[0], TT_GATE[2*i+1]) << DNA::sep << id[0] << TT_GATE[2*i+1] 
+                    << " -> {bi_forward} " << id[1] << TT_GATE[2*i] << DNA::sep << gate(id[0], TT_GATE[2*i+1])
+                    << " + " << id[0] << TT_GATE[2*i+1]
+                    << " |" << endl;
+                cout << gate(id[1], TT_GATE[2*i]) << " + " 
+                    << id[1] << TT_GATE[2*i] << DNA::sep << gate(id[0],TT_GATE[2*i+1])
+                    << " -> {bi_forward} " << gate(id[1], TT_GATE[2*i]) << DNA::sep << id[1] << TT_GATE[2*i]
+                    << " + " << gate(id[0],TT_GATE[2*i+1])
+                    << " |" << endl;
             }
-            createFromVector(doms);
+        }
+        else{
+            for(int i=0;i<4;i++){
+                cout << id[1] << TT_GATE[3*i] << " + " << id[2] << TT_GATE[3*i+1] << " + "
+                    << gate(id[0], TT_GATE[3*i+2]) << DNA::sep << id[0] << TT_GATE[3*i+2] 
+                    << " -> {tri_forward} " << id[0] << TT_GATE[3*i+2] << " + "
+                    << intermediate(id[1],id[2],id[0],TT_GATE[3*i], TT_GATE[3*i+1], TT_GATE[3*i+2])
+                    << " |" << endl;
+                cout << gate(id[1],TT_GATE[3*i]) << " + " 
+                    << intermediate(id[1],id[2],id[0],TT_GATE[3*i], TT_GATE[3*i+1], TT_GATE[3*i+2]) 
+                    << " -> {bi_forward} " << gate(id[1],TT_GATE[3*i]) << DNA::sep << id[1] << TT_GATE[3*i] 
+                    << " + " << id[2] << TT_GATE[3*i+1] << " + " << gate(id[0],TT_GATE[3*i+2]) << " |" << endl;
+                cout << gate(id[2],TT_GATE[3*i+1]) << " + " 
+                    << intermediate(id[1],id[2],id[0],TT_GATE[3*i], TT_GATE[3*i+1], TT_GATE[3*i+2]) 
+                    << " -> {bi_forward} " << gate(id[2],TT_GATE[3*i+1]) << DNA::sep << id[2] << TT_GATE[3*i+1] 
+                    << " + " << id[1] << TT_GATE[3*i] << " + " << gate(id[0],TT_GATE[3*i+2]) << " |" << endl;
+            }}
+    }
+    else if (version == ONE_TIME){
+        if (DNA::fanOutEnabled){
+            cout << fanOutOneTime(id[0], DNAMotif::getFanOutMultiplier());
+            conc = DNA::conc;
+        }
+        else conc = DNA::conc * DNAMotif::getConcMultiplier();
+
+        if(istype == STRAND_MOTIF){
+            cout << "init " << id[0] << "0 " << conc << " |" << endl;
+            return;
+        }
+        else if (istype == BIT_MOTIF){
+            return;
+        }
+        else if(istype == NOT_MOTIF){
+            for(int i=0;i<2;i++){
+                cout << id[1] << TT_GATE[2*i] 
+                    << " -> {uni_forward} " 
+                    << id[0] << TT_GATE[2*i+1] << " |" << endl;
+            }
+        }
+        else{
+            for(int i=0;i<4;i++){
+                cout << id[1] << TT_GATE[3*i] << " + " 
+                    << id[2] << TT_GATE[3*i+1] << " -> {bi_forward} " 
+                    << id[0] << TT_GATE[3*i+2] << " |" << endl;
+            }
+        }
+    }
+}
+
+void DNAMotif::constructFromInput(DNAMotif *I1, DNAMotif *I2, int f1, int f2){
+    cout << "for gates " << I1->getID() << " and " << I2->getID() 
+        << ", the nums are : " << f1 << "," << f2 << endl;
+    //andStrand
+
+    string ids[2];
+    ids[0] = id[0] + "0";
+    ids[1] = id[0] + "1";
+    const int *TT_gate;
+    TT_gate = getTruthTable[istype];
+    printGate(TT_gate);
+    I1->print();
+    I2->print();
+
+    for(int i=0;i<4;i++){
+        //andStrand
+        andStrand[i]->push(I1->getDomain(TT_gate[3*i],2));
+        cerr << "done till here " << i << endl;
+        andStrand[i]->push(I1->getDomain(TT_gate[3*i],3));
+        andStrand[i]->push(ids[TT_gate[3*i+2]]);
+        andStrand[i]->push(I2->getDomain(TT_gate[3*i+1],1));
+        andStrand[i]->push(I2->getDomain(TT_gate[3*i+1],2));
+
+        //gateStrand
+        gateStrand[i]->push(I2->getComplementDomain(TT_gate[3*i+1],3));
+        gateStrand[i]->push(I2->getComplementDomain(TT_gate[3*i+1],2));
+        gateStrand[i]->push(I2->getComplementDomain(TT_gate[3*i+1],1));
+        gateStrand[i]->push(andStrand[i]->getComplementDomain(0,2));
+        gateStrand[i]->push(I1->getComplementDomain(TT_gate[3*i],3));
+        gateStrand[i]->push(I1->getComplementDomain(TT_gate[3*i],2));
+        gateStrand[i]->push(I1->getComplementDomain(TT_gate[3*i],1));
+    }
+
+    constructCRN(I1->getID(), I2->getID(), f1, f2);
+    cerr << "in the dnamotif construct from input " << endl;
+}
+
+//The assumption is that only the 1,2,3 domains can be got
+//from a 2-input gate.
+string DNAMotif::getDomain(int bit, int idx, TOEHOLD_TYPE type){
+    const int *tt;
+    tt = getTruthTable[istype];
+    if(bit == 1){
+        for(int i=0;i<4;i++)
+            if(tt[3*i+2] == 1)
+                return andStrand[i]->getDomain(-1, idx, type);
+    }
+
+    for(int i=0;i<4;i++)
+        if(tt[3*i+2] == 0)
+            return andStrand[i]->getDomain(-1, idx, type);
+    cerr << "in the dnamotif getDomain " << endl;
+}
+
+string DNAMotif::getComplementDomain(int bit, int idx){
+    const int *tt;
+    tt = getTruthTable[istype];
+    if(bit == 1){
+        for(int i=0;i<4;i++)
+            if(tt[3*i+2] == 1)
+                return andStrand[i]->getComplementDomain(-1, idx);
+    }
+
+    for(int i=0;i<4;i++)
+        if(tt[3*i+2] == 0)
+            return andStrand[i]->getComplementDomain(-1, idx);
+    cerr << "in the dnamotif getComplementDomain " << endl;
+}
+
+vector<STRAND> DNAMotif::getStrands(void){
+    vector<STRAND> ret;
+    for(int i=0;i<4;i++){
+        ret.push_back(*andStrand[i]);
+        ret.push_back(*gateStrand[i]);
+    }
+    return ret;
+    cerr << "in the dnamotif getStrands " << endl;
+}
+
+
+void DNAMotif::constructCRN(const string &id1, const string &id2, const int &f1, const int &f2){
+    if(f1){
+        id[1] = getFanOutDomainName(id1, f1);
+    }
+    else
+        id[1] = id1;
+
+    if(f2){
+        id[2] = getFanOutDomainName(id2, f2);
+    }
+    else
+        id[2] = id2;
+}
+
+//STRAND methods
+
+STRAND::STRAND(){}
+STRAND::STRAND(int num){
+    DNAMotif::setType(STRAND_MOTIF);
+    id[0] = "A";
+    id[0][0] += num;
+}
+
+STRAND::STRAND(const string &s, int num){
+    DNAMotif::setType(STRAND_MOTIF);
+    id[0] = "A";
+    id[0][0] += num;
+    init(s);
+}
+
+void STRAND::init(const string &s){
+    char *tokens = new char[s.length()+1];
+    s.copy(tokens,s.length(),0);
+    tokens[s.length()] = '\0';
+
+    vector<string> doms;
+    char *token = strtok(tokens, " \t");
+    while(token != NULL){
+        doms.push_back(token);
+        token = strtok(NULL, " \t");
+    }
+    createFromVector(doms);
+}
+
+void STRAND::print(void){
+    for(int i=0;i<name.size();i++){
+        cout << name[i];
+        if(complement[i]) cout << "'";
+        cout << " ";
+    }
+    cout << endl;
+}
+void STRAND::printConcentration(void){
+    cout << "Concentration: " << DNAMotif::getConcMultiplier()
+        << "X" << endl;
+}
+void STRAND::printForDSD(string motif){
+    cout << "def " 
+        << motif
+        << "() = < ";
+    for(int i=0;i<name.size();i++){
+        cout << name[i] << "^";
+        if(complement[i]) cout << "*";
+        cout << " ";
+    }
+    cout << ">";
+    cout << endl;
+}
+
+string STRAND::getDomain(int bit, int idx, TOEHOLD_TYPE type){
+    cerr << "in strand getdomain" << endl;
+    if(name.size() <= idx){
+        throw "REQUEST FOR INDEX NOT PRESENT IN STRAND";
+    }
+
+    string suffix="";
+    if(type == DSD)
+        suffix = "^";
+
+    if(complement[idx] == 0)
+        return name[idx]+suffix;
+    else return name[idx]+suffix+"*";
+}
+
+string STRAND::getComplementDomain (int bit, int idx){
+    if(name.size() <= idx){
+        throw "REQUEST FOR INDEX NOT PRESENT IN STRAND";
+    }
+
+    if(complement[idx] == 1)
+        return name[idx];
+    else return name[idx]+"*";
+}
+
+void STRAND::push(string s){
+    if(s[s.length()-1] == '*'){
+        name.push_back(s.substr(0,s.length()-1));
+        complement.push_back(1);
+    }
+    else {
+        name.push_back(s);
+        complement.push_back(0);
+    }
+}
+
+string STRAND::getNewDomain(string prefix){
+    if(STRAND::nextNumber.find(prefix) == STRAND::nextNumber.end())
+        STRAND::nextNumber[prefix] = 0;
+
+    ostringstream oss1;
+    oss1 << prefix << STRAND::nextNumber[prefix];
+    STRAND::nextNumber[prefix]++;
+
+    return oss1.str();
+}
+
+bool STRAND::compareDomains(STRAND to){
+    vector<string> biDomain1, biDomain2;
+    biDomain1 = getConcatenatedDomains(2,2);
+    biDomain2 = to.getConcatenatedDomains(2,2);
+    for(int i=0;i<biDomain1.size();i++)
+        for(int j=0;j<biDomain2.size();j++)
+            if(biDomain1[i] == biDomain2[j])
+                return true;
+    return false;
+}
+
+vector<STRAND> STRAND::getStrands(void){
+    vector<STRAND> ret;
+    ret.push_back(*this);
+    return ret;
+}
+
+string STRAND::getID(void){
+    return id[0];
+}
+
+void STRAND::createFromVector(vector<string> s){
+    name.resize(s.size());
+    complement.resize(s.size());
+
+    for(int i=0;i<s.size();i++){
+        complement[i] = 0;
+        name[i] = s[i];
+
+        int last = s[i].length() - 1;
+        if(s[i][last] == '*'){
+            complement[i] = 1;
+            name[i].erase(name[i].end()-1);
+        }
+    }
+}
+
+vector<string> STRAND::getConcatenatedDomains(int len, int which){
+    vector<string> ret;
+    int num = name.size();
+    for(int i=0,j=num-1;i<num-1;i++,j--){
+        string twoDomains;
+
+        if(which == 0 || which == 2){
+            twoDomains.clear();
+            //i,i+1
+            twoDomains += name[i];
+            if(complement[i]) twoDomains += "*";
+            twoDomains += name[i+1];
+            if(complement[i+1]) twoDomains += "*";
+            ret.push_back(twoDomains);
+        }
+
+        if(which == 1 || which == 2){
+            twoDomains.clear();
+            //revcomp(j,j-1)
+            twoDomains += name[j];
+            if(!complement[j]) twoDomains += "*";
+            twoDomains += name[j-1];
+            if(!complement[j-1]) twoDomains += "*";
+            ret.push_back(twoDomains);
+        }
+    }
+    return ret;
+}
+
+typedef class BIT : public DNAMotif{
+    public:
+        BIT(){}
+
+        BIT(const string &s0, const string &s1, int num){
+            DNAMotif::setType(BIT_MOTIF);
+            id[0] = "A";
+            id[0][0] += num;
+            andStrand[0] = new STRAND(s0,num);
+            andStrand[1] = new STRAND(s1,num);
         }
 
         void print(void){
-            for(int i=0;i<name.size();i++){
-                cout << name[i];
-                if(complement[i]) cout << "'";
-                cout << " ";
-            }
-            cout << endl;
-        }
-        void printConcentration(void){
-            cout << "Concentration: " << DNAMotif::getConcentrationMultiplier()
-                << "X" << endl;
-        }
-        void printForDSD(string motif = "STRAND"){
-            cout << "def " 
-                << motif
-                << "() = < ";
-            for(int i=0;i<name.size();i++){
-                cout << name[i] << "^";
-                if(complement[i]) cout << "*";
-                cout << " ";
-            }
-            cout << ">";
-            cout << endl;
-        }
-        
-        string getDomain(int idx, TOEHOLD_TYPE type = NORMAL){
-            if(name.size() <= idx){
-                throw "REQUEST FOR INDEX NOT PRESENT IN STRAND";
-            }
-
-            string suffix="";
-            if(type == DSD)
-                suffix = "^";
-
-            if(complement[idx] == 0)
-                return name[idx]+suffix;
-            else return name[idx]+suffix+"*";
+            for(int i=0;i<2;i++)
+                andStrand[i]->print();
         }
 
-        string getComplementDomain (int idx){
-            if(name.size() <= idx){
-                throw "REQUEST FOR INDEX NOT PRESENT IN STRAND";
-            }
-
-            if(complement[idx] == 1)
-                return name[idx];
-            else return name[idx]+"*";
-        }
-
-        void push(string s){
-            if(s[s.length()-1] == '*'){
-                name.push_back(s.substr(0,s.length()-1));
-                complement.push_back(1);
-            }
-            else {
-                name.push_back(s);
-                complement.push_back(0);
+        void printForDSD(string motif = "BIT"){
+            for(int i=0;i<2;i++){
+                motif = getDSDName(i);
+                andStrand[i]->printForDSD(motif);
             }
         }
 
-        static string getNewDomain(string prefix = DOMAINPREFIX){
-            if(STRAND::nextNumber.find(prefix) == STRAND::nextNumber.end())
-                STRAND::nextNumber[prefix] = 0;
-
-            ostringstream oss1;
-            oss1 << prefix << STRAND::nextNumber[prefix];
-            STRAND::nextNumber[prefix]++;
-
-            return oss1.str();
+        void printForDSDWithConc(void){
+            string motif;
+            for(int i=0;i<2;i++){
+                motif = getDSDName(i);
+                cout << "| " 
+                    << DNA::conc * DNAMotif::getConcMultiplier()
+                    << " * "
+                    << motif
+                    << endl;
+            }
         }
 
-        bool compareDomains(STRAND to){
-            vector<string> biDomain1, biDomain2;
-            biDomain1 = getConcatenatedDomains(2,2);
-            biDomain2 = to.getConcatenatedDomains(2,2);
-            for(int i=0;i<biDomain1.size();i++)
-            for(int j=0;j<biDomain2.size();j++)
-                if(biDomain1[i] == biDomain2[j])
-                    return true;
-            return false;
+        string getDomain(int bit, int idx, TOEHOLD_TYPE type = NORMAL){
+            if(bit != 0 && bit != 1)
+                throw "REQUEST FOR INPUT INVALID ";
+
+            cerr << "in bit getdomain" << endl;
+            return andStrand[bit]->getDomain(bit, idx, type);
+        }
+
+        string getComplementDomain (int bit, int idx){
+            if(bit != 0 && bit != 1)
+                throw "REQUEST FOR INPUT INVALID ";
+
+            return andStrand[bit]->getComplementDomain(bit, idx);
         }
 
         vector<STRAND> getStrands(void){
             vector<STRAND> ret;
-            ret.push_back(*this);
+            for(int i=0;i<2;i++)
+                ret.push_back(*andStrand[i]);
             return ret;
         }
-
-    private:
-        vector<string> name;
-        vector<bool> complement;
-        static map<string, int> nextNumber;
-
-        void createFromVector(vector<string> s){
-            name.resize(s.size());
-            complement.resize(s.size());
-
-            for(int i=0;i<s.size();i++){
-                complement[i] = 0;
-                name[i] = s[i];
-
-                int last = s[i].length() - 1;
-                if(s[i][last] == '*'){
-                    complement[i] = 1;
-                    name[i].erase(name[i].end()-1);
-                }
-            }
-        }
-
-        vector<string> getConcatenatedDomains(int len, int which=2){
-            vector<string> ret;
-            int num = name.size();
-            for(int i=0,j=num-1;i<num-1;i++,j--){
-                string twoDomains;
-
-                if(which == 0 || which == 2){
-                    twoDomains.clear();
-                    //i,i+1
-                    twoDomains += name[i];
-                    if(complement[i]) twoDomains += "*";
-                    twoDomains += name[i+1];
-                    if(complement[i+1]) twoDomains += "*";
-                    ret.push_back(twoDomains);
-                }
-
-                if(which == 1 || which == 2){
-                    twoDomains.clear();
-                    //revcomp(j,j-1)
-                    twoDomains += name[j];
-                    if(!complement[j]) twoDomains += "*";
-                    twoDomains += name[j-1];
-                    if(!complement[j-1]) twoDomains += "*";
-                    ret.push_back(twoDomains);
-                }
-            }
-            return ret;
-        }
-}STRAND;
+}BIT;
 
 map<string, int> STRAND::nextNumber;
 
-typedef class NAND : public DNAMotif {
+typedef class BI_INPUT : public DNAMotif {
     public:
-        NAND(){
-            DNAMotif::setType(NAND_MOTIF);
+        BI_INPUT(){}
+        BI_INPUT(int num, MOTIF_TYPE type){
+            DNAMotif::setType(type);
+            id[0] = "A";
+            id[0][0] += num;
+            for(int i=0;i<4;i++){
+                andStrand[i] = new STRAND(num);
+                gateStrand[i] = new STRAND(num);
+            }
         }
-        STRAND getAnd(void){
-            return andStrand;
+
+}BI_INPUT;
+
+typedef class NOT : public DNAMotif {
+    public:
+        NOT(){}
+        NOT(int num){
+            DNAMotif::setType(NOT_MOTIF);
+            id[0] = "A";
+            id[0][0] += num;
+            for(int i=0;i<2;i++){
+                andStrand[i] = new STRAND();
+                gateStrand[i] = new STRAND();
+            }
         }
-        STRAND getGate(void){
-            return gateStrand;
-        }
-        STRAND getNot(void){
-            return notStrand;
-        }
-        void constructFromInput(DNAMotif *I1, DNAMotif *I2, int version=1){
+
+        void constructFromInput(DNAMotif *I1, DNAMotif *I2, int f1=0, int f2=0){
+            cout << "for gates " << I1->getID() <<
+                ", the nums are : " << f1 << endl;
+            string ids[2];
+            ids[0] = id[0] + "0";
+            ids[1] = id[0] + "1";
             //andStrand
-            andStrand.push(I1->getDomain(2));
-            andStrand.push(I1->getDomain(3));
-            andStrand.push(STRAND::getNewDomain());
-            andStrand.push(I2->getDomain(1));
-            andStrand.push(I2->getDomain(2));
+            //note that when getDomain or getComplementDomain is called on I1,
+            //then the "bit" should be passed to it. Whenever these two methods
+            //are called instead on a strand directly, the bit argument does not
+            //matter, and to denote this, a -1 is being passed.
+            //
+            //Also note, the 0 input creates the not motif 1, and vice versa.
+            for(int bit=0;bit<2;bit++){
+                andStrand[!bit]->push(I1->getDomain(bit,2));
+                andStrand[!bit]->push(I1->getDomain(bit,3));
+                andStrand[!bit]->push(ids[!bit]);
 
-            //gateStrand
-            gateStrand.push(I2->getComplementDomain(3));
-            gateStrand.push(I2->getComplementDomain(2));
-            gateStrand.push(I2->getComplementDomain(1));
-            gateStrand.push(andStrand.getComplementDomain(2));
-            gateStrand.push(I1->getComplementDomain(3));
-            gateStrand.push(I1->getComplementDomain(2));
-            gateStrand.push(I1->getComplementDomain(1));
+                if(bit == 0){
+                    andStrand[!bit]->push(STRAND::getNewDomain(DOMAINPREFIX));
+                    andStrand[!bit]->push(STRAND::getNewDomain(DOMAINPREFIX));
+                }
+                else{
+                    andStrand[!bit]->push(andStrand[1]->getDomain(-1,3));
+                    andStrand[!bit]->push(andStrand[1]->getDomain(-1,4));
+                }
 
-            //notStrand
-            notStrand.push(andStrand.getComplementDomain(3));
-            notStrand.push(andStrand.getComplementDomain(2));
-            notStrand.push(andStrand.getComplementDomain(1));
-            notStrand.push(STRAND::getNewDomain(PREFIX2));
+                gateStrand[!bit]->push(andStrand[!bit]->getComplementDomain(-1,2));
+                gateStrand[!bit]->push(andStrand[!bit]->getComplementDomain(-1,1));
+                gateStrand[!bit]->push(andStrand[!bit]->getComplementDomain(-1,0));
+                gateStrand[!bit]->push(I1->getComplementDomain(bit,1));
+            }
+
+            constructCRN(I1->getID(), "", f1, f2);
         }
 
-        string getDomain(int idx, TOEHOLD_TYPE type = NORMAL){
-            return notStrand.getDomain(idx, type);
+        string getDomain(int bit, int idx, TOEHOLD_TYPE type = NORMAL){
+            return andStrand[bit]->getDomain(-1, idx, type);
         }
 
-        string getComplementDomain (int idx){
-            return notStrand.getComplementDomain(idx);
+        string getComplementDomain (int bit, int idx){
+            return andStrand[bit]->getComplementDomain(-1, idx);
         }
 
         void print(void){
-            cout << "andStrand:: ";
-            andStrand.print();
-            cout << "gateStrand:: ";
-            gateStrand.print();
-            cout << "notStrand:: ";
-            notStrand.print();
+            cout << "andStrand:: " << endl;
+            for(int i=0;i<2;i++){
+                andStrand[i]->print();
+                gateStrand[i]->print();
+            }
         }
-        void printConcentration(void){
-            cout << "Conc: " << DNAMotif::getConcentrationMultiplier()
-                << "X" << endl;
-        }
-        void printForDSD(string motif="AND"){
-            cout << "def " 
-                << motif
-                << "() = {"
-                << gateStrand.getDomain(6, DSD) 
-                << "}["
-                << andStrand.getDomain(0,DSD)
-                << andStrand.getDomain(1,DSD)
-                << andStrand.getDomain(2,DSD)
-                << andStrand.getDomain(3,DSD)
-                << andStrand.getDomain(4,DSD)
-                << "]{"
-                << gateStrand.getDomain(0, DSD) 
-                << "}"
-                << endl;
+        void printForDSD(string motif){
 
-            motif = "NOT_" + motif;
-            notStrand.printForDSD(motif);
+            for(int i=0;i<2;i++){
+                motif = DNAMotif::getDSDName(i);
+                cout << "def " 
+                    << motif
+                    << "() = {"
+                    << gateStrand[i]->getDomain(-1,3, DSD) 
+                    << "}["
+                    << andStrand[i]->getDomain(-1,0,DSD) << " "
+                    << andStrand[i]->getDomain(-1,1,DSD) << " "
+                    << andStrand[i]->getDomain(-1,2,DSD)
+                    << "]{"
+                    << andStrand[i]->getDomain(-1,3, DSD) << " "
+                    << andStrand[i]->getDomain(-1,4, DSD) 
+                    << "}"
+                    << endl;
+            }
+        }
+
+        void printForDSDWithConc(void){
+            string motif;
+            for(int i=0;i<2;i++){
+                motif = DNAMotif::getDSDName(i);
+                cout << "| " 
+                    << DNA::conc * DNAMotif::getConcMultiplier()
+                    << " * "
+                    << motif
+                    << endl;
+            }
         }
 
         vector<STRAND> getStrands(void){
             vector<STRAND> ret;
-            ret.push_back(andStrand);
-            ret.push_back(gateStrand);
-            ret.push_back(notStrand);
+            for(int i=0;i<2;i++){
+                ret.push_back(*andStrand[i]);
+                ret.push_back(*gateStrand[i]);
+            }
             return ret;
         }
 
-    private:
-        STRAND andStrand;
-        STRAND gateStrand;
-        STRAND notStrand;
-}NAND;
-
-typedef class AND : public DNAMotif {
-    public:
-        AND(){
-            DNAMotif::setType(AND_MOTIF);
-        }
-        STRAND getAnd(void){
-            return andStrand;
-        }
-        STRAND getGate(void){
-            return gateStrand;
-        }
-        void constructFromInput(DNAMotif *I1, DNAMotif *I2, int version=1){
-            //andStrand
-            andStrand.push(I1->getDomain(2));
-            andStrand.push(I1->getDomain(3));
-            andStrand.push(STRAND::getNewDomain());
-            andStrand.push(I2->getDomain(1));
-            andStrand.push(I2->getDomain(2));
-
-            //gateStrand
-            gateStrand.push(I2->getComplementDomain(3));
-            gateStrand.push(I2->getComplementDomain(2));
-            gateStrand.push(I2->getComplementDomain(1));
-            gateStrand.push(andStrand.getComplementDomain(2));
-            gateStrand.push(I1->getComplementDomain(3));
-            gateStrand.push(I1->getComplementDomain(2));
-            gateStrand.push(I1->getComplementDomain(1));
-        }
-
-        string getDomain(int idx, TOEHOLD_TYPE type = NORMAL){
-            return andStrand.getDomain(idx, type);
-        }
-
-        string getComplementDomain (int idx){
-            return andStrand.getComplementDomain(idx);
-        }
-
-        void print(void){
-            cout << "andStrand:: ";
-            andStrand.print();
-            cout << "gateStrand:: ";
-            gateStrand.print();
-        }
-        void printConcentration(void){
-            cout << "Conc: " << DNAMotif::getConcentrationMultiplier()
-                << "X" << endl;
-        }
-        void printForDSD(string motif="AND"){
-            cout << "def " 
-                << motif
-                << "() = {"
-                << gateStrand.getDomain(6, DSD) 
-                << "}["
-                << andStrand.getDomain(0,DSD)
-                << andStrand.getDomain(1,DSD)
-                << andStrand.getDomain(2,DSD)
-                << andStrand.getDomain(3,DSD)
-                << andStrand.getDomain(4,DSD)
-                << "]{"
-                << gateStrand.getDomain(0, DSD) 
-                << "}"
-                << endl;
-
-        }
-
-        vector<STRAND> getStrands(void){
-            vector<STRAND> ret;
-            ret.push_back(andStrand);
-            ret.push_back(gateStrand);
-            return ret;
-        }
-
-    private:
-        STRAND andStrand;
-        STRAND gateStrand;
-}AND;
-
-/*
- * typedef class OR : public DNAMotif{} OR;
- * typedef class NOT : public DNAMotif{} NOT;
- */
-
-
-
-void createInputTurberfield(int &nodes, vector<vector <int> > &g, map<int, DNAMotif*> &m){
-    //F = (X and Y) or (Y and not Z)
-    nodes = 8;
-
-    //4 nand gates, 3 inputs, 1 output
-    //0,1,2 are inputs
-    //3,4,5,6 are nands
-    //7 is output
-    g.resize(nodes);
-    for(int i=0;i<nodes;i++){
-        g[i].resize(nodes);
-        for(int j=0;j<nodes;j++){
-            g[i][j] = 0;
-        }
-    }
-
-    m[0] = new STRAND ("p1 x1 x2 x3 n1");
-    m[1] = new STRAND ("p2 y1 y2 y3 n2");
-    m[2] = new STRAND ("p3 z1 z2 z3 n3");
-    m[3] = new NAND;
-    m[4] = new NAND;
-    m[5] = new NAND;
-    m[6] = new NAND;
-    m[7] = new STRAND;
-
-    //m[0]->print();
-
-    g[0][3] = 1;
-    g[1][3] = 1;
-    g[1][5] = 1;
-    g[2][4] = 1;
-    g[3][6] = 1;
-    g[4][5] = 1;
-    g[5][6] = 1;
-    g[6][7] = 1;
-}
+}NOT;
 
 void deleteInput(int &n, map<int, DNAMotif *> &m){
     for(int i=0;i<n;i++)
         delete m[i];
 }
 
-void createInputFile(int &nodes, vector<vector <int> > &g, map<int, DNAMotif*> &m, char* filename){
+//Returns 0 if an input starts with a # symbol.
+int getUncommentedInput(ifstream &file, string &line){
+    if(std::getline(file, line)){
+        if(line[0] == '#')
+            return 0;
+    }
+    else return -1;
+    return 1;
+}
+
+int createInputFile(int &nodes, map<int, int> &names, vector<vector <int> > &g, map<int, DNAMotif*> &m, char* filename){
     ifstream inputfile;
     inputfile.open(filename);
-    if(!inputfile) cout << "Error in file:" << filename << endl;
+    if(!inputfile) {
+        cout << "Error in file:" << filename << endl;
+        return 0;
+    }
     string nodesStr;
-    std::getline(inputfile, nodesStr);
+    while(!getUncommentedInput(inputfile, nodesStr));
     istringstream issN(nodesStr);
     issN >> nodes;
     string gate, line;
@@ -470,90 +868,105 @@ void createInputFile(int &nodes, vector<vector <int> > &g, map<int, DNAMotif*> &
     }
     cout << "nodes = " << nodes << endl;
 
-    while(std::getline(inputfile, gate)){
+    int ct = 0;
+    while(getUncommentedInput(inputfile, gate) != -1){
         cout << "gate = " 
             << gate
             << endl;
 
         if(gate == "nand"){
-            std::getline(inputfile, line);
+            while(!getUncommentedInput(inputfile, line));
             istringstream iss(line);
             while(iss >> num){
-                m[num] = new NAND;
+                names[num] = ct;
+                m[ct] = new BI_INPUT(num, NAND_MOTIF);
+                ct++;
             }
         }
         else if(gate == "and"){
-            std::getline(inputfile, line);
+            while(!getUncommentedInput(inputfile, line));
             istringstream iss(line);
             while(iss >> num){
-                m[num] = new AND;
+                names[num] = ct;
+                m[ct] = new BI_INPUT(num, AND_MOTIF);
+                ct++;
+            }
+        }
+        else if(gate == "or"){
+            while(!getUncommentedInput(inputfile, line));
+            istringstream iss(line);
+            while(iss >> num){
+                names[num] = ct;
+                m[ct] = new BI_INPUT(num, OR_MOTIF);
+                ct++;
+            }
+        }
+        else if(gate == "not"){
+            while(!getUncommentedInput(inputfile, line));
+            istringstream iss(line);
+            while(iss >> num){
+                names[num] = ct;
+                m[ct] = new NOT(num);
+                ct++;
+            }
+        }
+        else if(gate == "nor"){
+            while(!getUncommentedInput(inputfile, line));
+            istringstream iss(line);
+            while(iss >> num){
+                names[num] = ct;
+                m[ct] = new BI_INPUT(num, NOR_MOTIF);
+                ct++;
             }
         }
         else if(gate == "input"){
-            std::getline(inputfile, line);
+            while(!getUncommentedInput(inputfile, line));
             istringstream iss(line);
+            string bit[2];
             while(iss >> e1){
-                std::getline(inputfile, line);
-                m[e1] = new STRAND(line);
+                for(int i=0;i<2;i++){
+                    while(!getUncommentedInput(inputfile, line));
+                    bit[i] = line;
+                }
+
+                names[e1] = ct;
+                m[ct] = new BIT(bit[0],bit[1],e1);
+                ct++;
             }
         }
         else if(gate == "output"){
-            std::getline(inputfile, line);
+            while(!getUncommentedInput(inputfile, line));
             istringstream iss(line);
             while(iss >> num){
-                m[num] = new STRAND;
+                names[num] = ct;
+                m[ct] = new STRAND(num);
+                ct++;
             }
         }
         else if(gate == "edges"){
-            while(std::getline(inputfile, line)){
+            while(getUncommentedInput(inputfile, line) == 1){
                 istringstream edgeIss(line);
                 edgeIss >> e1 >> e2;
-                g[e1][e2] = 1;
+                if(g[names[e1]][names[e2]] != 1){
+                    g[names[e1]][names[e2]] = 1;
+                }
             }
         }
     }
-    inputfile.close();
-}
-
-void createInputEg1(int &nodes, vector<vector <int> > &g, map<int, DNAMotif*> &m){
-    nodes = 11;
-
-    //7 nand gates, 3 inputs, 1 output
-    g.resize(nodes);
+    
+    //setting fanout multiplier for each motif.
+    //if a motif does not have an out edge, its 
+    //fan out by default is 1, and is left unchanged.
+    int count = 0;
     for(int i=0;i<nodes;i++){
-        g[i].resize(nodes);
-        for(int j=0;j<nodes;j++){
-            g[i][j] = 0;
-        }
+        count = 0;
+        for(int j=0;j<nodes;j++)
+            if(g[i][j]) count++;
+        if(count)
+            m[i]->setFanOutMultiplier(count);
     }
-
-    m[6] = new STRAND ("p1 x1 x2 x3 n1");
-    m[9] = new STRAND ("p2 y1 y2 y3 n2");
-    m[4] = new STRAND ("p3 z1 z2 z3 n3");
-    m[0] = new NAND;
-    m[8] = new NAND;
-    m[2] = new NAND;
-    m[10] = new NAND;
-    m[3] = new NAND;
-    m[1] = new NAND;
-    m[5] = new NAND;
-    m[7] = new STRAND;
-
-    g[6][0] = 1;
-    g[9][2] = 1;
-    g[9][0] = 1;
-    g[9][10] = 1;
-    g[9][8] = 1;
-    g[4][8] = 1;
-    g[0][2] = 1;
-    g[0][10] = 1;
-    g[8][1] = 1;
-    g[2][3] = 1;
-    g[2][1] = 1;
-    g[10][3] = 1;
-    g[3][5] = 1;
-    g[1][5] = 1;
-    g[5][7] = 1;
+    inputfile.close();
+    return 1;
 }
 
 void topologicalSort (vector<vector <int > > &g, vector<int> &ret){
@@ -587,6 +1000,11 @@ void topologicalSort (vector<vector <int > > &g, vector<int> &ret){
     return;
 }
 
+void print_usage(void){
+    cout << "Usage: ./a.out -f <enable fanout> -r <enable reusable> [file]"
+        << endl;
+}
+
 int main(int argc, char *argv[])
 {
     try{
@@ -594,32 +1012,74 @@ int main(int argc, char *argv[])
         int n;
         vector <vector<int> >g;
         map<int, DNAMotif* > m;
+        map<int, int> names;
         cout << argv[1] << endl;
-        createInputFile(n, g, m, argv[1]);
+        initialize();
+
+        char c;
+        while ((c = getopt (argc, argv, "fr")) != -1)
+            switch (c)
+            {
+                case 'f':
+                    DNA::fanOutEnabled = true;
+                    break;
+                case 'r':
+                    DNA::reusable = true;
+                    break;
+                default:
+                    print_usage();
+                    return -1;
+            }
+        
+        if(!createInputFile(n, names, g, m, argv[optind])){
+            return -1;
+        }
+        cerr << "Input file read" << endl;
 
         vector<int> sorted;
         sorted.clear();
         topologicalSort(g, sorted);
+
+        map<int,int> fanOut;
+        for(int i=0;i<n;i++)
+            fanOut[i] = 0;
 
         //Construction of DNA Domains
         DNAMotif *input[2];
         for(int i=0;i<n;i++){
             //cout << "starting with vertex: " << sorted[i] << endl;
             int ct = 0;
+            int index[2];
             input[0] = input[1] = NULL;
+            index[0] = index[1] = -1;
             for(int j=0;j<n;j++){
                 if(g[j][sorted[i]] != 0){
                     //cout << "trying: " << j << "," << sorted[i] << ":" << g[j][sorted[i]] << endl;
-                    input[ct++] = m[j];
+                    input[ct] = m[j];
+                    index[ct] = j;
+                    ct++;
+                    fanOut[j]++;
                 }
             }
-            if(ct == 2)
-                m[sorted[i]]->constructFromInput(input[0], input[1]);
-            else if (ct == 1)
-                m[sorted[i]]->constructFromInput(input[0], input[0]);
-            //m[sorted[i]]->print();
-            //cout << endl << endl;
+            if(ct == 2){
+                if(!DNA::fanOutEnabled)
+                    m[sorted[i]]->constructFromInput(input[0], input[1]);
+                else {
+                    m[sorted[i]]->constructFromInput(input[0], input[1], 
+                        m[index[0]]->getFanOutMultiplier()>1?fanOut[index[0]]:0, 
+                        m[index[1]]->getFanOutMultiplier()>1?fanOut[index[1]]:0);
+                }
+            }
+            else if (ct == 1){
+                if(!DNA::fanOutEnabled)
+                    m[sorted[i]]->constructFromInput(input[0], input[0]);
+                else{
+                    m[sorted[i]]->constructFromInput(input[0], input[0], 
+                        m[index[0]]->getFanOutMultiplier()>1?fanOut[index[0]]:0);
+                }
+            }
         }
+        cerr << "Domains constructed" << endl;
 
         //Figuring out the concentration multiplier per motif.
         //algorithm: set the concentration for each edge g[i][j].
@@ -630,78 +1090,55 @@ int main(int argc, char *argv[])
             for(int b=0;b<n;b++)
                 edgeWeights[a][b] = 0;
         }
-
+        cout << "all edge weights have been assigned" << endl;
+        int concMult = 0;
         for(int i=n-1;i>=0;i--){
-            //sorted[i] is the node which is being considered. 
-            //all nodes topologically after it already have their
-            //concentration multipliers set.
-            //
-
-
-            //concentration multiplier of this node
-            //is the sum of edge weights of all outgoing
-            //nodes.
-            int multiplier = 0;
+            //sorted[i] is 1x concentration.
+            concMult = 0;
             for(int j=0;j<n;j++)
-                if(g[sorted[i]][j] != 0)
-                    multiplier += edgeWeights[sorted[i]][j];
-
-            //incase the node doesn't have any output edges,
-            //set it to 1 by default.
-            if(multiplier < 1) multiplier = 1;
-
-            m[sorted[i]]->setConcentrationMultiplier(multiplier);
-
-            //set the reqd. conc. of all incoming edges to sorted[i], 
-            //as this multiplier
-            for(int j=0;j<n;j++)
-                if(g[j][sorted[i]] != 0)
-                    edgeWeights[j][sorted[i]] = multiplier;
+                if(g[sorted[i]][j])
+                    concMult += m[j]->getConcMultiplier();
+            if(concMult)
+                m[sorted[i]]->setConcMultiplier(concMult);
         }
 
         for(int i=0;i<n;i++){
-            cout << "Motif no.: "<< sorted[i] << " #";
+            cout << "Motif no.: "<< m[sorted[i]]->getID() << " #";
             m[sorted[i]]->printConcentration();
             cout << endl;
         }
 
-        cout << "directive sample 50000.0 100\n"
+        cout << "directive sample 500.0 100\n"
             << "directive scale 100.0\n\n"
             << "def TMP() = <tmp>\n";
 
 
-        ostringstream oss_conc;
-        oss_conc << "( 1*TMP()\n";
         for(int i=0;i<n;i++){
-            ostringstream oss;
-            if(m[sorted[i]]->getType() == STRAND_MOTIF){
-                oss << "INPUT_" << sorted[i];
-                oss_conc << "| "
-                    << m[sorted[i]]->getConcentrationMultiplier()*100
-                    << "*"
-                    << "INPUT_"
-                    << sorted[i]
-                    << "()\n";
-            }
-            else if(m[sorted[i]]->getType() == NAND_MOTIF){
-                oss << "NAND_" << sorted[i];
-                oss_conc << "| "
-                    << m[sorted[i]]->getConcentrationMultiplier()*100
-                    << "*"
-                    << "NAND_"
-                    << sorted[i]
-                    << "()\n";
-                oss_conc << "| "
-                    << m[sorted[i]]->getConcentrationMultiplier()*100
-                    << "*"
-                    << "NOT_NAND_"
-                    << sorted[i]
-                    << "()\n";
-            }
-            m[sorted[i]]->printForDSD(oss.str());
+            m[sorted[i]]->printForDSD();
         }
-        oss_conc << ")";
-        cout << oss_conc.str() << endl;
+
+        cout << "( 1*TMP()" << endl;;
+        for(int i=0;i<n;i++){
+            m[sorted[i]]->printForDSDWithConc();
+        }
+        cout << ")" << endl;
+
+        cout << "Printing in CRN - for checking with LBS" << endl;
+        cout << "directive sample 500.0 100\n\n"
+            << "rate uni_forward = 5e-2;\n"
+            << "rate bi_forward = 1e-3;\n"
+            << "rate tri_forward = 3e-5;\n";
+
+
+        //based on arguments.
+        CIRCUIT_TYPE circ = ONE_TIME;
+        if(DNA::reusable){
+            circ = REUSABLE;
+        }
+
+        for(int i=0;i<n;i++){
+            m[sorted[i]]->printForCRN(circ);
+        }
 
         //Cross Validation to ensure no two gates will
         //interact with one another.
