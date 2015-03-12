@@ -493,6 +493,14 @@ void insert_flake(flake *fp, tube *tp)
    empty = fp->empty[0][0][0];
 
    /* If the flake_tree is empty, make the root. */
+   /* Garg:
+    * flake tree is a binary tree that stores all the flakes in hte assembly.
+    * If there isn't a flake tree, this function creates one nad inserts the flake
+    * into the tree. the net event rate at any flake consists of two types of events
+    * on event and off event. rate refers to the off events, i.e. to tiles that
+    * are already bound, while empty contains the number of empty sites on the flake,
+    * which implies the number of on events that can happen.
+   */
    if (tp->flake_tree==NULL) {
       ftp = (flake_tree *)malloc(sizeof(flake_tree));
       ftp->left=ftp->right=NULL; ftp->fp=fp; ftp->up=NULL;
