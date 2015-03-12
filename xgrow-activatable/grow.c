@@ -1958,6 +1958,12 @@ void simulate(tube *tp, evint events, double tmax, int emax, int smax, int fsmax
       total_blast_rate = tp->k*tp->conc[0]*blast_rate*size*size*tp->num_flakes;
       if (total_rate + total_blast_rate + new_flake_rate == 0) break;
 
+      /*
+       * Garg:
+       * total rate for my purposes is just total rate. the newflakerate is 0 since not
+       * using tinybox, and the totalblastrate is 0 since not using any blast parameters.
+       */
+
 
       // Choose a time step.
       dt = -log(drand48()) / (total_rate + total_blast_rate + new_flake_rate);
@@ -1967,6 +1973,10 @@ void simulate(tube *tp, evint events, double tmax, int emax, int smax, int fsmax
        * (1) blast
        * (2) create a new flake
        * (3) have a tile event (kTAM/aTAM)
+       *
+       * Garg: again, the only possible action for activatable tile purposes is (3)
+       * a tile event. However, tile events can have on, off and change events, and currently
+       * there are only on and off events.
        */
       if (blast_rate>0 && event_choice < total_blast_rate) { // blast event (FIXME: not looked at)
          int kb=size,ii,jj,ic,jc,di,dj,seed_here,flake_n;
@@ -2092,7 +2102,14 @@ void simulate(tube *tp, evint events, double tmax, int emax, int smax, int fsmax
          tp->t += dt;
       }
       else { // tile (aTAM / kTAM) event
+          /*
+           * Garg: this event is the only one that will always be chosen for activatable tiles.
+           */
 
+          /*
+           * Garg: some confusion over how a flake is chosen. flake_tree seems to be a binary
+           * tree such that even if its root is null, it might have children?
+           */
          fp=choose_flake(tp);
 
          /* ensure that the seed state in our chosen flake is reasonable */
@@ -2291,7 +2308,14 @@ void simulate(tube *tp, evint events, double tmax, int emax, int smax, int fsmax
                   unless fp->empty were to be changed, we can't handle unequal tile
                   concentrations. */
             } 
-            else { /* reversible kTAM model */
+            else { /* reversible kTAM model 
+                      * Garg:
+                      * This is the place where most code changes will go in. Change events will be included
+                      * in here. The final event happening has already been chosen by the choose_cell function,
+                      * this code only implements those changes.
+                      *
+            */
+
 
                /* TILE ADDITION */
 
@@ -2309,7 +2333,7 @@ void simulate(tube *tp, evint events, double tmax, int emax, int smax, int fsmax
                   /* zero-bond tile additions fall off immediately;
                      count them or else, if there are lots, the display
                      can be super-slow! */
-                  if (oldn==0 && !HCONNECTED(fp,i,j,n)) 
+                  if (oldn==0 && !HCONNECTED(fp,i,j,n))
                   { tp->stat_a++; tp->stat_d++; tp->events+=2; fp->events+=2; } 
                }
                else if (oldn==0 && double_tile_allowed(tp,fp,i,j,n)) { /* [zero_bonds is set, so let any attachment happen */
