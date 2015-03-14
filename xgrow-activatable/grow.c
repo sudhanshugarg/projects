@@ -872,8 +872,16 @@ void change_cell(flake *fp, int i, int j, Trep n)
    dprintf("Entering change cell to change flake %d, cell %d,%d from %d to %d.\n",fp->flake_ID,i,j,fp->Cell(i,j),n);
    if (periodic) { i=(i+size)%size; j=(j+size)%size; }
    else if (i<0 || i>=size || j<0 || j>=size) return; // can't change tiles beyond central field
+
+   /*
+    * Garg: The next if condition will change in change events.
+    */
    if (fp->Cell(i,j)==n) return;
-   if (tp!=NULL) { /* flake has been added to a tube */
+
+   if (tp!=NULL) { /* flake has been added to a tube 
+                      * Garg: Shouldn't this be checking if tp->flake_tree is not null? once init_tube is called, this check
+                      * is rendered useless, regardless of whether or not there is a flake currently.
+   */
       if (fp->Cell(i,j)==0) {                         /* tile addition */
          if (tp->conc[n]<=fp->flake_conc) {
             printf ("zero conc!\n");
@@ -923,7 +931,7 @@ void change_cell(flake *fp, int i, int j, Trep n)
 
          // monomer flakes don't deplete []; just became monomer!
          // zzz check this
-         //if (fp->tiles==2 || (fp->tiles==3 && tp->dt_right[fp->Cell(i,j)])) { 
+         //if (fp->tiles==2 || (fp->tiles==3 && tp->dt_right[fp->Cell(i,j)]))  
          if (fp->tiles==2 || (fp->tiles==3 && fp->seed_is_double_tile)) { 
             tp->conc[fp->seed_n] += fp->flake_conc; 
             tp->conc[0]          += fp->flake_conc;
@@ -940,6 +948,9 @@ void change_cell(flake *fp, int i, int j, Trep n)
          fp->mismatches -= Mism(fp,i,j,fp->Cell(i,j));
       } 
       else {                               /* tile hydrolysis or replacement */
+          /* Garg: or a change event. This is the area for code change
+           */
+
          fp->G += Gse(fp,i,j,fp->Cell(i,j)) - Gse(fp,i,j,n) +
             log(tp->conc[fp->Cell(i,j)]) - log(tp->conc[n]) + 
             tp->Gcb[fp->Cell(i,j)] - tp->Gcb[n]; 
@@ -2317,7 +2328,13 @@ void simulate(tube *tp, evint events, double tmax, int emax, int smax, int fsmax
             */
 
 
-               /* TILE ADDITION */
+               /* TILE ADDITION 
+                * Garg: I don't understand. If zero bonds are not allowed, and a double tile is not allowed,
+                * then does it mean that a tile cannot get added at all? But tiles do get added when zero bonds
+                * are not allowed, so does it mean that double tile allowed is 1 by default?
+                * Edit: Yes, it seems the function double_tile_allowed returns 1 by default, if there is no
+                * double tile present.
+                * */
 
                if (zero_bonds_allowed==0) { /* [zero_bonds] is not set, so require connectivity. */
 
