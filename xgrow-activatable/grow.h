@@ -18,7 +18,7 @@
 
 #define evint unsigned long long
 
-#define DEBUG 0
+#define DEBUG 1
 #define dprintf if (DEBUG) printf
 #define d2printf if (DEBUG==2) printf
 
@@ -268,7 +268,18 @@ typedef struct tube_struct {
    void  *states_seen_hash;   /* hash that records which states we have been to. */
    unsigned int ***start_states;
    double *start_state_Gs;
-
+   Trep activatable; /* does this tile set use activatable rules?         */
+   /*
+    * Garg: activatable is 1 when being used, and 0 when not. In addition,
+    * activatable needs a set of rates for conversion from one tile type
+    * to another tile type, that are concentration independent. Need
+    * to find a way to input these rules.
+    */
+   double **transition;    /* A 2D array that stores the transition rates from
+                              one tile type to another. Thus, transition[i][j]
+                              contains the transition rate from tile type i to
+                              tile type j. Note that this is direction specific.
+                              */
 
 } tube;          
 
@@ -301,7 +312,7 @@ void set_params(tube *tp, int** tileb, double* strength, double **glue,
       double* stoic, double anneal_g, double anneal_t, int updates_per_RC,double anneal_h,double anneal_s,double startC,double endC,double seconds_per_C,int *dt_right, int *dt_left, int hydro, double k, double Gmc, double Gse,
       double Gmch, double Gseh, double Ghyd, 
       double Gas, double Gam, double Gae, double Gah, double Gao, double T, double tinybox,
-      int seed_i, int seed_j, double Gfc);
+      int seed_i, int seed_j, double Gfc, int activatable, double **transition);
 void reset_params(tube *tp, double old_Gmc, double old_Gse,
       double new_Gmc, double new_Gse, double Gseh);
 void recalc_G(flake *fp);

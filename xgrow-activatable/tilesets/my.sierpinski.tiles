@@ -3,15 +3,19 @@
 % RE-01, SE-10, UE-11, VE-00 and the (never designed) corner and border tiles.
 tile edges matches {{N E S W}*}
 num tile types=7
-num binding types=3
+num binding types=4
 tile edges={
-{1 0 0 1}[.1](red)      % Corner
-{1 0 1 2}[.5](magenta)  % Bright (vertical)
-{2 1 0 1}[.5](purple)   % Bleft  (horizontal)
-{3 3 3 3}    (blue3)    % VE-00
-{3 2 2 3}    (green)    % UE-11 
-{2 3 2 2}    (yellow)   % SE-10
-{2 2 3 2}    (tan)      % RE-01
+{1 0 0 1}[.1](red)     % Corner
+{1 0 1 2}[0](magenta)  % Bright (vertical)
+{2 1 0 1}[0](purple)   % Bleft  (horizontal)
+{0 0 4 0}[.5](blue)  % Protected Version 2Pa Bright (vertical)
+{0 0 1 0}[0](green)  % Protected Version 2Pb Bright (vertical)
+{0 4 0 0}[.5](yellow)  % Protected Version 3Pa Bleft (horizontal)
+{0 1 0 0}[0](tan)  % Protected Version 3Pb Bleft (horizontal)
+%{3 3 3 3}    (blue3)    % VE-00
+%{3 2 2 3}    (green)    % UE-11 
+%{2 3 2 2}    (yellow)   % SE-10
+%{2 2 3 2}    (tan)      % RE-01
 }
 %
 %  VE-00    UE-11    SE-10    RE-01    Bleft    Bright   Corner
@@ -19,13 +23,24 @@ tile edges={
 %  3   3    3   2    2   3    2   2    1   1    2   0    1   0
 %    3        2        2        3        0        1        0
 %
-binding strengths={2 1 1}
+binding strengths={2 1 1 0.2}
+g(1,4)=0.2
+g(2,4)=0.2
+a(4,5)=500000
+a(5,4)=500000
+a(5,2)=1500000
+a(5,0)=0
+a(6,7)=500000
+a(7,6)=500000
+a(7,3)=1500000
+a(7,0)=0
 %block=8
 %size=128
 %Gse=12.08
 %Gmc=25
-update_rate=5000
+update_rate=1
 %seed=127,127,1
+activatable
 %pause
 %fsmax=15876
 %datafile=myfile.data

@@ -225,6 +225,15 @@ tube *init_tube(Trep P, Trep N, int num_bindings)
    tp->flake_list=NULL;
    tp->flake_tree=NULL;
 
+   /* Garg
+    */
+   tp->activatable = 0;
+   tp->transition = (double **) calloc(sizeof(double*),N+1);
+   for (i=0;i<=N;i++) {
+      tp->transition[i] = (double*) calloc(sizeof(double),N+1);
+      for (j=0;j<=N;j++) { tp->transition[i][j]=0; }
+   }
+
 
    /* set_params() will have to put reasonable values in place */
    /* NOTE this routine is not "proper" -- assumes all allocs are OK */
@@ -245,6 +254,7 @@ void free_tube(tube *tp)
 
    for (n=0;n<tp->N+1;n++) free(tp->tileb[n]); free(tp->tileb);
    for (i=0;i<tp->num_bindings+1;i++) free(tp->glue[i]); free(tp->glue);
+   for (i=0;i<tp->N+1;i++) free(tp->transition[i]); free(tp->transition);
    free(tp->strength); 
 
    free_tree(tp->flake_tree);  
@@ -255,6 +265,25 @@ void free_tube(tube *tp)
    free(tp);
    /* NOTE because init_flake is not safe to out-of-mem, this could die */
 }
+
+void print_Gses(tube *tp){
+   int n,m;
+   dprintf("Gse_EW glues\n");
+   for (n=1; n<=tp->N; n++) {
+       for (m=1; m<=tp->N; m++) {
+          dprintf("%g,",tp->Gse_EW[n][m]);
+       }
+       dprintf("\n");
+   }
+   dprintf("Gse_NS glues\n");
+   for (n=1; n<=tp->N; n++) {
+       for (m=1; m<=tp->N; m++) {
+          dprintf("%g,",tp->Gse_NS[n][m]);
+       }
+       dprintf("\n");
+   }
+}
+
 
 void set_Gses(tube *tp, double Gse, double Gseh) {
    int n,m;
@@ -277,7 +306,7 @@ void set_params(tube *tp, int** tileb, double* strength, double **glue, double* 
       int *dt_right, int *dt_left, int hydro, double k, double Gmc, double Gse,
       double Gmch, double Gseh, double Ghyd, 
       double Gas, double Gam, double Gae, double Gah, double Gao, double T,
-      double tinybox, int seed_i, int seed_j, double Gfc)
+      double tinybox, int seed_i, int seed_j, double Gfc, int activatable, double **transition)
 {
    int i,j,n;
    /* make our own copy of tile set and strengths, so the calling program
@@ -368,6 +397,16 @@ void set_params(tube *tp, int** tileb, double* strength, double **glue, double* 
       /* if there was only one block of 1s, 
          then they've all been erased now */
       ring[i] = (n==0);
+   }
+
+   /*
+    * Garg
+    */
+   tp->activatable = activatable;
+   for (i=0;i<=tp->N;i++) {
+      for (j=0;j<=tp->N;j++) {
+         tp->transition[i][j] = transition[i][j];
+      }
    }
 } // set_params()
 
@@ -659,6 +698,23 @@ void remove_flake(flake *fp) {
    tp->num_flakes--;
 }
 
+/*Garg
+ * prints transition rates from one tile type to another
+ * only for debug purposes
+ */
+void print_transition(tube *tp){
+    if((tp == NULL) || !DEBUG) return;
+    int i,j;
+    dprintf("Transition Rate Matrix\n");
+    for(i=0;i<=tp->N;i++){
+        for(j=0;j<=tp->N;j++){
+            dprintf("%g,",tp->transition[i][j]);
+        }
+        dprintf("\n");
+    }
+    dprintf("\n");
+}
+
 /* gives concentration-independent rates                                   */
 /* for non-empty cells i,j, computes rate rv[n] to convert to type n       */
 /*  so rv[0] gives the off-rate  (not the sum)                             */
@@ -670,7 +726,7 @@ void remove_flake(flake *fp) {
 /* 0 <= i,j < 2^P                                                          */
 double calc_rates(flake *fp, int i, int j, double *rv)
 {
-   int n,mi,ei,hi,mo,eo,ho;
+   int n,mi,ei,hi,mo,eo,ho,c;
    double r, sumr; 
    tube *tp=fp->tube;
    Trep nN,nE,nS,nW; int N=fp->N; int size=(1<<fp->P);
@@ -680,6 +736,8 @@ double calc_rates(flake *fp, int i, int j, double *rv)
    if (tp==NULL) return 0;
    if (tp->T>0) return 0;   /* no off-rates: irreversible Tile Assembly Model */
    n = fp->Cell(i,j);
+   dprintf("cell reached: %d\n", n);
+   //print_transition(tp);
    if (n==0) return 0;                           /* no off-rate for empties   */
    if (tp->dt_left[n]) return 0;                 /* similarly, no off-rate for the  
                                                     right side of a double tile */
@@ -694,6 +752,8 @@ double calc_rates(flake *fp, int i, int j, double *rv)
                            (tp->dt_left[fp->seed_n] && j == fp->seed_j - 1)));
    if (!tp->dt_right[n]) {
       r = tp->k * exp(-Gse(fp,i,j,n));
+      dprintf("The sticky end interaction strength = %g\n", Gse(fp,i,j,n));
+      //print_Gses(tp);
    } 
    else {
       r = tp->k * exp(-Gse_double(fp,i,j,n));
@@ -764,6 +824,27 @@ double calc_rates(flake *fp, int i, int j, double *rv)
          if (rv!=NULL) rv[n-N/2]=r; sumr += r;
       }
    } 
+   else if (tp->activatable){
+       /*
+        * Garg: rv[n] gives the rate to convert to tile type n
+        * Using this same array, to convert a tile type into
+        * another tile type using the activatable model 
+        * rv[0] has already been calculated - the dissociation
+        * rate of this tile.
+        * The remaining rates to other states have to be now calculated.
+        */
+       if(rv != NULL){
+           dprintf("Computing transitions out of Cell(%d,%d)=%d\n",i,j,n);
+           dprintf("rv[0]=%g\n",rv[0]);
+           for (c=1; c<=fp->N; c++) {
+               rv[c] = tp->transition[n][c]; 
+               sumr+= rv[c];
+           }
+           for(c=0;c<=N;c++)
+               dprintf("%g,",rv[c]);
+           dprintf("\n");
+       }
+   }
 
    return sumr;
 } // calc_rates()
@@ -883,6 +964,7 @@ void change_cell(flake *fp, int i, int j, Trep n)
                       * is rendered useless, regardless of whether or not there is a flake currently.
    */
       if (fp->Cell(i,j)==0) {                         /* tile addition */
+
          if (tp->conc[n]<=fp->flake_conc) {
             printf ("zero conc!\n");
             return; // conc's can't go to zero!
@@ -922,6 +1004,13 @@ void change_cell(flake *fp, int i, int j, Trep n)
          fp->mismatches += Mism(fp,i,j,n);
       } 
       else if (n==0) {                              /* tile loss */
+          /* Garg
+           * to change this - TODO
+           * when a tile dissociates, it should increase the concentration
+           * of that tile, even if flakes are not being used, i.e. Gfc=0.
+           * Need to do this to figure out concentration of unprotected tiles
+           * after a certain amount of time t.
+           */
          tp->conc[0] += fp->flake_conc; 
          tp->conc[fp->Cell(i,j)] += fp->flake_conc; 
          if (tp->dt_right[fp->Cell(i,j)]) fp->G += +log(tp->conc[fp->Cell(i,j)]) + Gse_double_left(fp,i,j,fp->Cell(i,j));
@@ -948,12 +1037,21 @@ void change_cell(flake *fp, int i, int j, Trep n)
          fp->mismatches -= Mism(fp,i,j,fp->Cell(i,j));
       } 
       else {                               /* tile hydrolysis or replacement */
-          /* Garg: or a change event. This is the area for code change
+          /* Garg: 
+           * When a tile is changed from Cell(i,j) to n, the following should happen:
+           *  - concentrations of monomers in solution stay unchanged.
+           *  - deltaG of flake changes
+           *  - number of mismatches changes
+           *  - rates should be updated. rates are two types of rates: dissociation
+           *  rate which is present in the rate array, and empty slots, which
+           *  indicate how many sites can tiles attach to. These are updated automatically
+           *  by the function update_rate which calls calc_rate, so we should be good.
            */
 
          fp->G += Gse(fp,i,j,fp->Cell(i,j)) - Gse(fp,i,j,n) +
             log(tp->conc[fp->Cell(i,j)]) - log(tp->conc[n]) + 
             tp->Gcb[fp->Cell(i,j)] - tp->Gcb[n]; 
+         fp->mismatches += Mism(fp,i,j,n) - Mism(fp,i,j,fp->Cell(i,j));
          tp->stat_h++; 
          /* by our rules, hydrolyzed tiles have same se types as non-hyd. */
       }
@@ -1159,7 +1257,19 @@ void choose_cell(flake *fp, int *ip, int *jp, int *np)
          r = r * sum;  cum = 0;
          for (n=0; n<=fp->N; n++) if (r < (cum += tp->rv[n])) break; 
          if (n>fp->N) { printf("Hydro failed to choose anyone!!!\n"); n=0; }
-      } else {
+      } else if (tp->activatable){
+          /*
+           * Garg: code for activatable added. Incase a cell is chosen, its
+           * state can be changed. Figure out with what rate etc.
+           */
+         printf("Trying to choose next activatable cell\n");
+         sum = calc_rates(fp,i,j,tp->rv);
+         if (sum==0) printf("Zero-sum activatable rate was chosen!!!\n");
+         r = r * sum;  cum = 0;
+         for (n=0; n<=fp->N; n++) if (r < (cum += tp->rv[n])) break; 
+         if (n>fp->N) { printf("Activatable failed to choose anyone!!!\n"); n=0; }
+      }
+      else {
          n=0;  // always an off-event, unless hydrolysis rules are used.
       }
    }
@@ -2115,6 +2225,7 @@ void simulate(tube *tp, evint events, double tmax, int emax, int smax, int fsmax
       else { // tile (aTAM / kTAM) event
           /*
            * Garg: this event is the only one that will always be chosen for activatable tiles.
+           * Start looking from here. Step 1.
            */
 
           /*
@@ -2324,6 +2435,8 @@ void simulate(tube *tp, evint events, double tmax, int emax, int smax, int fsmax
                       * This is the place where most code changes will go in. Change events will be included
                       * in here. The final event happening has already been chosen by the choose_cell function,
                       * this code only implements those changes.
+                      * choose_cell has returned the new cell to switch to.
+                      * This function must update the rates etc TODO.
                       *
             */
 
@@ -2374,7 +2487,10 @@ void simulate(tube *tp, evint events, double tmax, int emax, int smax, int fsmax
                /* Garg: change events also happen here. This is when oldn - old tile was nonzero, and new tile is also
                 * non zero. Then, the state has to be changed.
                 */
-               if (oldn>0 && n>0) change_cell(fp,i,j,n);
+               if (oldn>0 && n>0) {
+                   dprintf("Garg: Attempting to switch cell\n");
+                   change_cell(fp,i,j,n);
+               }
 
                /* TILE REMOVAL */
 

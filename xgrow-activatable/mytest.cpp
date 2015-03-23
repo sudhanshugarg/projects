@@ -1,5 +1,6 @@
 #include<iostream>
 #include<cstdlib>
+#include<cstdio>
 using namespace std;
 
 int main(){
@@ -11,6 +12,7 @@ int main(){
     r = drand48();
     r = drand48();
     for(int p=0; p<20; p++){
+        getchar();
         k00 = drand48()*100;
         k01 = drand48()*100;
         k10 = drand48()*100;

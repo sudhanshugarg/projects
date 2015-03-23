@@ -345,6 +345,9 @@ int *dt_right, *dt_left;
 int N, num_bindings, tileb_length;
 int **tileb; double *stoic;
 int hydro; 
+//Garg
+int activatable;
+double **transition;
 int clean_cycles=0; double clean_X=1.0; int fill_cycles=0; double fill_X=1.0; 
 double error_radius=0.0; double repair_unique_T=2.0; int repair_unique=0;
 double tmax; int emax, smax, fsmax, smin;
@@ -568,6 +571,8 @@ int parse_arg_line(char *arg)
    else if (strncmp(arg,"fill_X=",7)==0) fill_X=atof(&arg[7]);
    else if (strncmp(arg,"error_radius=",13)==0) error_radius=atof(&arg[13]);
    else if (strncmp(arg,"repair_unique_T=",15)==0) { repair_unique_T=atof(&arg[15]); repair_unique=1; }
+   //Garg
+   else if (strncmp(arg,"activatable",11)==0) activatable=1;
    else if (strncmp(arg,"datafile=",9)==0) datafp=fopen(strtok(&arg[9],newline), "a");
    else if (strncmp(arg,"largeflakedatafile=",19)==0) {
       char *c;
@@ -660,7 +665,7 @@ void read_skip_comment(FILE *fp)
 
 void read_tilefile(FILE *tilefp) 
 { 
-   float strength_float, glue_float, stoic_float; int i,j,k;
+   float strength_float, glue_float, stoic_float, transition_float; int i,j,k;
    int temp_char; char s[255], **btnames;
    int n,m,r;
    int return_code;
@@ -769,6 +774,15 @@ void read_tilefile(FILE *tilefp)
    strength = (double*) calloc(sizeof(double),num_bindings+1); 
    dt_left = (int *) calloc(sizeof(int),N+1);
    dt_right = (int *) calloc(sizeof(int),N+1);
+   /*
+    * Garg: transition rates from one tile type to another for
+    * activatable tiles.
+    */
+   transition = (double **) calloc(sizeof (double *),N + 1);
+   for (i=0;i<=N;i++) { int j;
+      transition[i] = (double *) calloc(sizeof (double),N + 1);
+      for (j=0;j<=N;j++) { transition[i][j]=0; }
+   }
 
    temp_char = getc (tilefp);  ungetc(temp_char, tilefp);
    if (temp_char == 'b') {
@@ -796,6 +810,19 @@ void read_tilefile(FILE *tilefp)
    } ungetc(temp_char, tilefp); rsc;
    // printf("Bond strengths loaded (%d bond types)\n",num_bindings);
    // for (i=1;i<=num_bindings;i++) printf("%f ",strength[i]); printf("\n");
+
+   /*
+    * Garg: adding in a(i,j) for rate transition from tile type i to tile type j.
+    * note that it is directional, hence i to j and j to i have to be specified
+    * separately.
+    */
+   while ((temp_char=fgetc(tilefp)) == 'a') {
+      if (3!=fscanf(tilefp,"(%d,%d)=%g\n",&n,&m,&transition_float))
+      { fprintf(stderr,"Reading tile file: expected activatable rate transition def.\n"); exit(-1); } 
+      rsc;
+      // printf ("transition float is a(%d,%d)=%g\n",n,m,transition_float);
+      transition[n][m] = (double) transition_float;
+   } ungetc(temp_char, tilefp); rsc;
 
    rsc;
    while(fgets(&stringbuffer[0],256,tilefp)!=NULL) {
@@ -831,9 +858,9 @@ void getargs(int argc, char **argv)
       printf("  size=   field side length (power-of-two) [default 256]\n");
       printf("  rand=   random number seed\n");
       printf("  T=      threshold T (relative to Gse) for irreversible Tile Assembly Model\n");
-      printf("  k=      hybridization rate constant (/sec)\n");
-      printf("  Gmc=    initiation free energy  (units kT)\n");
-      printf("  Gse=    interaction free energy per binding\n");
+      printf("  k=      hybridization rate constant (/sec)[default 1e6]\n");
+      printf("  Gmc=    initiation free energy  (units kT)[default 17]\n");
+      printf("  Gse=    interaction free energy per binding[default 8.6]\n");
       printf("  Gmch=   initiation free energy  for hydrolyzed units\n");
       printf("  Gseh=   interaction free energy for hydrolyzed units\n");
       printf("  Ghyd=   free energy of hydrolysis\n");
@@ -886,6 +913,7 @@ void getargs(int argc, char **argv)
 	    "                        all surounding tiles are present (after clean/fill) [default=0]\n");
       printf("  repair_unique_T=      alternative clean/fill, called Rx: remove mismatches, fill in interior sites \n"
 	    "                        if there is a unique strength-T tile, then fill in by strongest tile\n");
+      printf("  activatable           change state of tiles based on rates *once they are attached* to a growth front.\n");
       printf("  datafile=             append Gmc, Gse, ratek, time, size, #mismatched se, events, perimeter, dG, dG_bonds for each flake\n");
       printf("  arrayfile=            output MATLAB-format flake array information on exit (after cleaning)\n");
       printf("  exportfile=           on-request output of MATLAB-format flake array information\n");
@@ -2076,7 +2104,8 @@ int main(int argc, char **argv)
       set_params(tp,tileb,strength,glue,stoic,0,initial_rc,updates_per_RC,
 	    anneal_h,anneal_s,startC,endC,seconds_per_C,
 	    dt_right, dt_left, hydro,ratek,
-	    Gmc,Gse,Gmch,Gseh,Ghyd,Gas,Gam,Gae,Gah,Gao,T,tinybox, seed_i, seed_j, Gfc);
+	    Gmc,Gse,Gmch,Gseh,Ghyd,Gas,Gam,Gae,Gah,Gao,T,tinybox, seed_i, seed_j, 
+        Gfc,activatable,transition);
 #ifdef TESTING_OK
       run_xgrow_tests(tp,Gmc,Gse,seed_i,seed_j,seed_n,size);
 #endif
@@ -2090,7 +2119,7 @@ int main(int argc, char **argv)
    /* set initial state */
    tp = init_tube(size_P,N,num_bindings);   
    set_params(tp,tileb,strength,glue,stoic,anneal_g,anneal_t,updates_per_RC,anneal_h,anneal_s,startC,endC,seconds_per_C,dt_right, dt_left, hydro,ratek,
-	 Gmc,Gse,Gmch,Gseh,Ghyd,Gas,Gam,Gae,Gah,Gao,T,tinybox,seed_i,seed_j,Gfc);
+	 Gmc,Gse,Gmch,Gseh,Ghyd,Gas,Gam,Gae,Gah,Gao,T,tinybox,seed_i,seed_j,Gfc,activatable,transition);
 
    fprm=fparam;
 
@@ -2185,6 +2214,12 @@ int main(int argc, char **argv)
       } else {
 	 if (0==paused && 0==mousing && !XPending(display)) {
 	    simulate(tp,update_rate,tmax,emax,smax,fsmax,smin);
+        /*
+         * Garg: 1 simulate == 5000 events. Now, find a way to pause
+         * after every event, or reduce number of events per simulate
+         * EDIT: found!! change update_rate to be 1.
+         */
+        paused = 1;
 	    fp = tp->flake_list;
 	    assert (!fp || !tp->tinybox ||
 		  ((!fp->seed_is_double_tile && fp->tiles > 1) || fp->tiles > 2));
@@ -2305,7 +2340,7 @@ int main(int argc, char **argv)
 			anneal_h, anneal_s, startC, endC, seconds_per_C,
 			dt_right, dt_left, hydro,ratek,
 			Gmc,Gse,Gmch,Gseh,Ghyd,Gas,Gam,Gae,Gah,Gao,T,tinybox,seed_i,seed_j,
-			Gfc);
+			Gfc,activatable,transition);
 		  fprm=fparam; 
 		  while (fprm!=NULL) {
 		     int fn;
