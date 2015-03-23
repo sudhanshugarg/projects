@@ -2341,6 +2341,11 @@ void simulate(tube *tp, evint events, double tmax, int emax, int smax, int fsmax
                   if (oldn==0 && HCONNECTED(fp,i,j,n) && 
                         double_tile_allowed(tp,fp,i,j,n)) {
                      change_cell(fp,i,j,n);
+                     /*
+                     * Garg: change_cell also updates the rates for *some* of the cells
+                     * that are involved in the cell change. In particular, the cell i,j and
+                     * its immediate neighbours.
+                     */
                      if (tp->dt_right[n])
                         change_cell(fp,i,j+1,tp->dt_right[n]);
                      if (tp->dt_left[n])
@@ -2354,6 +2359,9 @@ void simulate(tube *tp, evint events, double tmax, int emax, int smax, int fsmax
                   { tp->stat_a++; tp->stat_d++; tp->events+=2; fp->events+=2; } 
                }
                else if (oldn==0 && double_tile_allowed(tp,fp,i,j,n)) { /* [zero_bonds is set, so let any attachment happen */
+                  /* Garg: this if section is incase zero bonds are allowed. For now, not changing, since not
+                   * allowing zero strength bonds. Might want to change later TODO
+                   */
                   change_cell(fp,i,j,n);
                   if (tp->dt_right[n])
                      change_cell(fp,i,j+1,n);
@@ -2363,6 +2371,9 @@ void simulate(tube *tp, evint events, double tmax, int emax, int smax, int fsmax
                /* FIXME: is zero_bonds a good option to have? It may break some serious things with fission code */
 
                /* hydrolysis happens here */
+               /* Garg: change events also happen here. This is when oldn - old tile was nonzero, and new tile is also
+                * non zero. Then, the state has to be changed.
+                */
                if (oldn>0 && n>0) change_cell(fp,i,j,n);
 
                /* TILE REMOVAL */
