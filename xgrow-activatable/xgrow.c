@@ -2218,8 +2218,8 @@ int main(int argc, char **argv)
          * Garg: 1 simulate == 5000 events. Now, find a way to pause
          * after every event, or reduce number of events per simulate
          * EDIT: found!! change update_rate to be 1.
-         */
         paused = 1;
+         */
 	    fp = tp->flake_list;
 	    assert (!fp || !tp->tinybox ||
 		  ((!fp->seed_is_double_tile && fp->tiles > 1) || fp->tiles > 2));

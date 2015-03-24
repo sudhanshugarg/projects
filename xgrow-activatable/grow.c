@@ -736,7 +736,6 @@ double calc_rates(flake *fp, int i, int j, double *rv)
    if (tp==NULL) return 0;
    if (tp->T>0) return 0;   /* no off-rates: irreversible Tile Assembly Model */
    n = fp->Cell(i,j);
-   dprintf("cell reached: %d\n", n);
    //print_transition(tp);
    if (n==0) return 0;                           /* no off-rate for empties   */
    if (tp->dt_left[n]) return 0;                 /* similarly, no off-rate for the  
@@ -752,7 +751,7 @@ double calc_rates(flake *fp, int i, int j, double *rv)
                            (tp->dt_left[fp->seed_n] && j == fp->seed_j - 1)));
    if (!tp->dt_right[n]) {
       r = tp->k * exp(-Gse(fp,i,j,n));
-      dprintf("The sticky end interaction strength = %g\n", Gse(fp,i,j,n));
+      dprintf("The sticky end interaction strength of cell %d = %g\n", n, Gse(fp,i,j,n));
       //print_Gses(tp);
    } 
    else {
@@ -840,7 +839,7 @@ double calc_rates(flake *fp, int i, int j, double *rv)
                rv[c] = tp->transition[n][c]; 
                sumr+= rv[c];
            }
-           for(c=0;c<=N;c++)
+           for(c=1;c<=N;c++)
                dprintf("%g,",rv[c]);
            dprintf("\n");
        }
@@ -883,7 +882,12 @@ void update_rates(flake *fp, int ii, int jj)
          newempty--;  newempty=(newempty>0);  /* only care if exists */
       }
 
-      fp->rate[fp->P][ii][jj] = calc_rates(fp, ii, jj, NULL);
+      /*
+       * Garg: Changed last argument of calc_rates
+       * while trying to fix segfault. TODO
+       */
+      double myrv[100];
+      fp->rate[fp->P][ii][jj] = calc_rates(fp, ii, jj, myrv);
       fp->empty[fp->P][ii][jj] = newempty;
 
       for (p=fp->P-1; p>=0; p--) {
@@ -1262,7 +1266,7 @@ void choose_cell(flake *fp, int *ip, int *jp, int *np)
            * Garg: code for activatable added. Incase a cell is chosen, its
            * state can be changed. Figure out with what rate etc.
            */
-         printf("Trying to choose next activatable cell\n");
+         dprintf("Trying to choose next activatable cell\n");
          sum = calc_rates(fp,i,j,tp->rv);
          if (sum==0) printf("Zero-sum activatable rate was chosen!!!\n");
          r = r * sum;  cum = 0;

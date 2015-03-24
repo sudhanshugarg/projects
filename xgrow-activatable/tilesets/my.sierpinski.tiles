@@ -2,20 +2,36 @@
 % This tileset contains the 7 tiles corresponding to a DAE-E tile set
 % RE-01, SE-10, UE-11, VE-00 and the (never designed) corner and border tiles.
 tile edges matches {{N E S W}*}
-num tile types=7
+num tile types=27
 num binding types=4
 tile edges={
-{1 0 0 1}[.1](red)     % Corner
-{1 0 1 2}[0](magenta)  % Bright (vertical)
-{2 1 0 1}[0](purple)   % Bleft  (horizontal)
-{0 0 4 0}[.5](blue)  % Protected Version 2Pa Bright (vertical)
-{0 0 1 0}[0](green)  % Protected Version 2Pb Bright (vertical)
-{0 4 0 0}[.5](yellow)  % Protected Version 3Pa Bleft (horizontal)
-{0 1 0 0}[0](tan)  % Protected Version 3Pb Bleft (horizontal)
-%{3 3 3 3}    (blue3)    % VE-00
-%{3 2 2 3}    (green)    % UE-11 
-%{2 3 2 2}    (yellow)   % SE-10
-%{2 2 3 2}    (tan)      % RE-01
+{1 0 0 1}[.1](red)     % 01 Corner
+{1 0 1 2}[0](magenta)  % 02 Unprotected 2c Bright (vertical)
+{2 1 0 1}[0](tan)      % 03 Unprotected 3c Bleft  (horizontal)
+{0 0 4 0}[.5](blue)    % 04 Protected Version 2a Bright (vertical)
+{0 0 1 0}[0](green)    % 05 Protected Version 2b Bright (vertical)
+{0 4 0 0}[.5](blue)    % 06 Protected Version 3a Bleft (horizontal)
+{0 1 0 0}[0](green)    % 07 Protected Version 3b Bleft (horizontal)
+{0 4 0 0}[0.5](blue)   % 08 Protected 4a Rule tile
+{0 3 0 0}[0](green)    % 09 Protected 4b Rule tile
+{0 3 4 0}[0](yellow)   % 10 Protected 4c Rule tile
+{0 3 3 0}[0](white)    % 11 Protected 4d Rule tile
+{3 3 3 3}[0](gold)     % 12 UnProtected 4e Rule tile
+{0 4 0 0}[0.5](blue)   % 13 Protected 5a Rule tile
+{0 2 0 0}[0](green)    % 14 Protected 5b Rule tile
+{0 2 4 0}[0](yellow)   % 15 Protected 5c Rule tile
+{0 2 2 0}[0](white)    % 16 Protected 5d Rule tile
+{3 2 2 3}[0](wheat)    % 17 UnProtected 5e Rule tile
+{0 4 0 0}[0.5](blue)   % 18 Protected 5a Rule tile
+{0 3 0 0}[0](green)    % 19 Protected 5b Rule tile
+{0 3 4 0}[0](yellow)   % 20 Protected 5c Rule tile
+{0 3 2 0}[0](white)    % 21 Protected 5d Rule tile
+{2 3 2 2}[0](orange)   % 22 UnProtected 5e Rule tile
+{0 4 0 0}[0.5](blue)   % 23 Protected 6a Rule tile
+{0 2 0 0}[0](green)    % 24 Protected 6b Rule tile
+{0 2 4 0}[0](yellow)   % 25 Protected 6c Rule tile
+{0 2 3 0}[0](white)    % 26 Protected 6d Rule tile
+{2 2 3 2}[0](cyan)     % 27 UnProtected 6e Rule tile
 }
 %
 %  VE-00    UE-11    SE-10    RE-01    Bleft    Bright   Corner
@@ -26,19 +42,46 @@ tile edges={
 binding strengths={2 1 1 0.2}
 g(1,4)=0.2
 g(2,4)=0.2
+g(3,4)=0.2
 a(4,5)=500000
 a(5,4)=500000
 a(5,2)=1500000
-a(5,0)=0
 a(6,7)=500000
 a(7,6)=500000
 a(7,3)=1500000
-a(7,0)=0
+a(8,9)=500000
+a(9,8)=500000
+a(9,10)=500000
+a(10,9)=500000
+a(10,11)=500000
+a(11,10)=500000
+a(11,12)=1500000
+a(13,14)=500000
+a(14,13)=500000
+a(14,15)=500000
+a(15,14)=500000
+a(15,16)=500000
+a(16,15)=500000
+a(16,17)=1500000
+a(18,19)=500000
+a(19,18)=500000
+a(19,20)=500000
+a(20,19)=500000
+a(20,21)=500000
+a(21,20)=500000
+a(21,22)=1500000
+a(23,24)=500000
+a(24,23)=500000
+a(24,25)=500000
+a(25,24)=500000
+a(25,26)=500000
+a(26,25)=500000
+a(26,27)=1500000
 %block=8
 %size=128
 %Gse=12.08
 %Gmc=25
-update_rate=1
+update_rate=500
 %seed=127,127,1
 activatable
 %pause
