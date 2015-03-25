@@ -40,6 +40,7 @@ tile edges={
 %    3        2        2        3        0        1        0
 %
 binding strengths={2 1 1 0.2}
+toehold glues={4}
 g(1,4)=0.2
 g(2,4)=0.2
 g(3,4)=0.2
@@ -81,7 +82,7 @@ a(26,27)=1500000
 %size=128
 %Gse=12.08
 %Gmc=25
-update_rate=500
+update_rate=1
 %seed=127,127,1
 activatable
 %pause

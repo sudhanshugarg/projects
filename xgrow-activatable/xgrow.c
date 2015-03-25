@@ -348,6 +348,8 @@ int hydro;
 //Garg
 int activatable;
 double **transition;
+int *is_toehold;
+
 int clean_cycles=0; double clean_X=1.0; int fill_cycles=0; double fill_X=1.0; 
 double error_radius=0.0; double repair_unique_T=2.0; int repair_unique=0;
 double tmax; int emax, smax, fsmax, smin;
@@ -667,8 +669,10 @@ void read_tilefile(FILE *tilefp)
 { 
    float strength_float, glue_float, stoic_float, transition_float; int i,j,k;
    int temp_char; char s[255], **btnames;
+   char brace;
    int n,m,r;
    int return_code;
+   int toehold_scan;
 
    rewind(tilefp); 
    // needs to be read twice, 
@@ -800,6 +804,39 @@ void read_tilefile(FILE *tilefp)
       r=0; fscanf(tilefp,"}%n",&r); rsc;
       if (r!=1) { fprintf(stderr,"Reading tile file: expected binding strength defs }.\n"); exit(-1); }
    }
+
+    /*
+     * Garg: introducing an option to specify toehold glues. This helps to figure
+     * out transitions that involve toehold converting to full sticky ends attached.
+     * Its important to verify the transitions are since after state change, the sticky
+     * ends must match else the transition couldn't have taken place.
+     */
+   temp_char = getc (tilefp);  ungetc(temp_char, tilefp);
+   if(temp_char == 't'){
+      is_toehold = (int *) calloc(sizeof (int),num_bindings + 1);
+      r=0; fscanf(tilefp,"toehold glues=%n",&r); rsc;
+      if (r!=14) { fprintf(stderr,"Reading tile file: expected toehold glues defs.\n"); exit(-1); }
+      r=0; fscanf(tilefp,"{%n",&r); rsc;
+      if (r!=1) { fprintf(stderr,"Reading tile file: expected binding strength defs {.\n"); exit(-1); }
+      for(i=1;i<=num_bindings;i++) {
+          if (2!=fscanf(tilefp,"%d%c",&toehold_scan,&brace)){
+              if(brace != '}') {
+                  fprintf(stderr,"Reading tile file: expected brace } (without any space) after last toehold glue %d\n",toehold_scan); 
+                  exit(-1); 
+              }
+              else break;
+          }
+          is_toehold[toehold_scan] = 1;
+    	    // printf("strength for se #%d = %g\n",i,strength[i]);
+      } rsc;
+   }
+   if(DEBUG){
+       dprintf("Is a toehold?\n");
+       for(i=1;i<=num_bindings;i++)
+           dprintf("%d,%d;", i,is_toehold[i]);
+       dprintf("\n");
+   }
+
    while ((temp_char=fgetc(tilefp)) == 'g') {
       if (3!=fscanf(tilefp,"(%d,%d)=%g\n",&n,&m,&glue_float))
       { fprintf(stderr,"Reading tile file: expected glue def.\n"); exit(-1); } 
@@ -2063,7 +2100,8 @@ void cleanup()
 
 
 int main(int argc, char **argv)
-{unsigned int width, height;
+{
+   unsigned int width, height;
    int x,y,b,i,j;    int clear_x=0,clear_y=0;
    int mousing=0; int stat=0;
    double new_Gse, new_Gmc;
@@ -2105,7 +2143,7 @@ int main(int argc, char **argv)
 	    anneal_h,anneal_s,startC,endC,seconds_per_C,
 	    dt_right, dt_left, hydro,ratek,
 	    Gmc,Gse,Gmch,Gseh,Ghyd,Gas,Gam,Gae,Gah,Gao,T,tinybox, seed_i, seed_j, 
-        Gfc,activatable,transition);
+        Gfc,activatable,transition,is_toehold);
 #ifdef TESTING_OK
       run_xgrow_tests(tp,Gmc,Gse,seed_i,seed_j,seed_n,size);
 #endif
@@ -2119,7 +2157,7 @@ int main(int argc, char **argv)
    /* set initial state */
    tp = init_tube(size_P,N,num_bindings);   
    set_params(tp,tileb,strength,glue,stoic,anneal_g,anneal_t,updates_per_RC,anneal_h,anneal_s,startC,endC,seconds_per_C,dt_right, dt_left, hydro,ratek,
-	 Gmc,Gse,Gmch,Gseh,Ghyd,Gas,Gam,Gae,Gah,Gao,T,tinybox,seed_i,seed_j,Gfc,activatable,transition);
+	 Gmc,Gse,Gmch,Gseh,Ghyd,Gas,Gam,Gae,Gah,Gao,T,tinybox,seed_i,seed_j,Gfc,activatable,transition,is_toehold);
 
    fprm=fparam;
 
@@ -2218,8 +2256,8 @@ int main(int argc, char **argv)
          * Garg: 1 simulate == 5000 events. Now, find a way to pause
          * after every event, or reduce number of events per simulate
          * EDIT: found!! change update_rate to be 1.
-        paused = 1;
          */
+        paused = 1;
 	    fp = tp->flake_list;
 	    assert (!fp || !tp->tinybox ||
 		  ((!fp->seed_is_double_tile && fp->tiles > 1) || fp->tiles > 2));
@@ -2340,7 +2378,7 @@ int main(int argc, char **argv)
 			anneal_h, anneal_s, startC, endC, seconds_per_C,
 			dt_right, dt_left, hydro,ratek,
 			Gmc,Gse,Gmch,Gseh,Ghyd,Gas,Gam,Gae,Gah,Gao,T,tinybox,seed_i,seed_j,
-			Gfc,activatable,transition);
+			Gfc,activatable,transition,is_toehold);
 		  fprm=fparam; 
 		  while (fprm!=NULL) {
 		     int fn;

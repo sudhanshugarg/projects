@@ -67,6 +67,47 @@ unsigned char ring[256];
 #define CONNECTED(fp,i,j) HCONNECTED(fp,i,j,fp->Cell(i,j))
 /* all of these can only be used for 0 <= i,j < size                     */
 
+/* Garg:
+ * Addition of macros for checking if a tile state transition
+ * is a toehold transition or not.
+ */
+
+#define IS_TOEHOLD_BINDING_STEP(fp,tile1,tile2) (                    \
+    1*((fp->tube->is_toehold)[(fp->tube->tileb)[tile1][0]] && \
+    ((fp->tube->tileb)[tile1][0] !=  (fp->tube->tileb)[tile2][0]) && \
+    ((fp->tube->tileb)[tile1][1] ==  (fp->tube->tileb)[tile2][1]) && \
+    ((fp->tube->tileb)[tile1][2] ==  (fp->tube->tileb)[tile2][2]) && \
+    ((fp->tube->tileb)[tile1][3] ==  (fp->tube->tileb)[tile2][3])) + \
+    2*((fp->tube->is_toehold)[(fp->tube->tileb)[tile1][1]] && \
+    ((fp->tube->tileb)[tile1][1] !=  (fp->tube->tileb)[tile2][1]) && \
+    ((fp->tube->tileb)[tile1][0] ==  (fp->tube->tileb)[tile2][0]) && \
+    ((fp->tube->tileb)[tile1][2] ==  (fp->tube->tileb)[tile2][2]) && \
+    ((fp->tube->tileb)[tile1][3] ==  (fp->tube->tileb)[tile2][3])) + \
+    4*((fp->tube->is_toehold)[(fp->tube->tileb)[tile1][2]] && \
+    ((fp->tube->tileb)[tile1][2] !=  (fp->tube->tileb)[tile2][2]) && \
+    ((fp->tube->tileb)[tile1][1] ==  (fp->tube->tileb)[tile2][1]) && \
+    ((fp->tube->tileb)[tile1][0] ==  (fp->tube->tileb)[tile2][0]) && \
+    ((fp->tube->tileb)[tile1][3] ==  (fp->tube->tileb)[tile2][3])) + \
+    8*((fp->tube->is_toehold)[(fp->tube->tileb)[tile1][3]] && \
+    ((fp->tube->tileb)[tile1][3] !=  (fp->tube->tileb)[tile2][3]) && \
+    ((fp->tube->tileb)[tile1][1] ==  (fp->tube->tileb)[tile2][1]) && \
+    ((fp->tube->tileb)[tile1][2] ==  (fp->tube->tileb)[tile2][2]) && \
+    ((fp->tube->tileb)[tile1][0] ==  (fp->tube->tileb)[tile2][0])) )
+
+/* Garg:
+ * edge can be 0,1,2,3
+ * i,j are the Cells current position
+ * n is the new tile type with which a match has to be
+ * found
+ */
+#define GLUES_MATCH(fp, i, j, n, edge) ( \
+     (fp->tube->tileb)[n][edge] ==  \
+     (fp->tube->tileb)[fp->Cell(    \
+         (i)+((edge)%3?1:-1)*!((edge)%2), \
+         (j)+((edge)%3?1:-1)*((edge)%2))] \
+         [((edge)+2)%4] )
+
+
 int num_flakes=0;
 int double_tile_count=0;
 flake *blank_flakes = NULL;
@@ -233,6 +274,7 @@ tube *init_tube(Trep P, Trep N, int num_bindings)
       tp->transition[i] = (double*) calloc(sizeof(double),N+1);
       for (j=0;j<=N;j++) { tp->transition[i][j]=0; }
    }
+   tp->is_toehold = (int *) calloc(sizeof(int),num_bindings+1);
 
 
    /* set_params() will have to put reasonable values in place */
@@ -255,6 +297,7 @@ void free_tube(tube *tp)
    for (n=0;n<tp->N+1;n++) free(tp->tileb[n]); free(tp->tileb);
    for (i=0;i<tp->num_bindings+1;i++) free(tp->glue[i]); free(tp->glue);
    for (i=0;i<tp->N+1;i++) free(tp->transition[i]); free(tp->transition);
+   free(tp->is_toehold);
    free(tp->strength); 
 
    free_tree(tp->flake_tree);  
@@ -306,7 +349,8 @@ void set_params(tube *tp, int** tileb, double* strength, double **glue, double* 
       int *dt_right, int *dt_left, int hydro, double k, double Gmc, double Gse,
       double Gmch, double Gseh, double Ghyd, 
       double Gas, double Gam, double Gae, double Gah, double Gao, double T,
-      double tinybox, int seed_i, int seed_j, double Gfc, int activatable, double **transition)
+      double tinybox, int seed_i, int seed_j, double Gfc, int activatable, double **transition,
+      int *is_toehold)
 {
    int i,j,n;
    /* make our own copy of tile set and strengths, so the calling program
@@ -408,6 +452,11 @@ void set_params(tube *tp, int** tileb, double* strength, double **glue, double* 
          tp->transition[i][j] = transition[i][j];
       }
    }
+
+   for (i=1;i<=tp->num_bindings;i++) {
+       tp->is_toehold[i] = is_toehold[i];
+   }
+
 } // set_params()
 
 /* recalculate flake energy & rates from scratch                    */
@@ -1265,6 +1314,7 @@ void choose_cell(flake *fp, int *ip, int *jp, int *np)
           /*
            * Garg: code for activatable added. Incase a cell is chosen, its
            * state can be changed. Figure out with what rate etc.
+           *
            */
          dprintf("Trying to choose next activatable cell\n");
          sum = calc_rates(fp,i,j,tp->rv);
@@ -1968,7 +2018,7 @@ void get_random_wander_permutation (int di[6], int dj[6],
 /* simulates 'events' events */
 void simulate(tube *tp, evint events, double tmax, int emax, int smax, int fsmax, int smin)
 {
-   int i,j,n,oldn; double dt; flake *fp; int chunk, seedchunk[4];
+   int i,j,n,oldn,edge; double dt; flake *fp; int chunk, seedchunk[4];
    double total_rate, total_blast_rate, new_flake_rate, event_choice; long int emaxL;
    int size=(1<<tp->P), N=tp->N;  
    if (tp->flake_list==NULL && tp->tinybox == 0) return;  /* no flakes! */
@@ -2493,12 +2543,58 @@ void simulate(tube *tp, evint events, double tmax, int emax, int smax, int fsmax
                 */
                if (oldn>0 && n>0) {
                    dprintf("Garg: Attempting to switch cell\n");
-                   change_cell(fp,i,j,n);
+                   /* Garg
+                    * Need to put in additional checks. 
+                    * A rule tile needs a different set of checks
+                    * A boundary tile needs a different set of checks.
+                    *
+                    * rule tile:
+                    * check if activatable is on.
+                    *
+                    * check if the new state that was chosen, can actually
+                    * be applied. For example:
+                    * transition from a to b
+                    * To check this, you need to ensure that the neighbouring tiles 
+                    * 1) glue can actually bind to your glue - TODO check is needed
+                    *
+                    * (EDIT: Somehow this condition doesn't
+                    * seem to matter while running the simulation)
+                    * 
+                    * transition from b to a - no check needed.
+                    * transition from b to c - can always happen, no check is needed
+                    *
+                    * transition from c to b - "
+                    * transition from c to d - TODO check is needed. can only happen if 
+                    *  i) a neighbouring tile exists
+                    *  ii) its glue is the same as the transitioned tile - d's glue.
+                    *
+                    * transition from d to c - check is not needed.
+                    * transition from d to e - check is not needed.
+                    *
+                    * 
+                    */
+                   edge = IS_TOEHOLD_BINDING_STEP(fp,oldn,n);
+                   dprintf("Checking if this is a TMSD step: tile %d to %d, edge=%d\n", oldn, n, edge);
+                   //if((edge = IS_TOEHOLD_BINDING_STEP(fp,oldn,n)))
+                   if(edge){
+                       edge = (int)log2((double)edge);
+                       dprintf("Checking glue matches for tile (%d,%d), edge %d\n", i, j, edge);
+
+                    dprintf("the following: tile glue %d, cell (%d,%d)[%d] = %d\n",  (fp->tube->tileb)[n][edge],  (i)+((edge)%3?1:-1)*!((edge)%2), (j)+((edge)%3?1:-1)*((edge)%2), ((edge)+2)%4, (fp->tube->tileb)[fp->Cell((i)+((edge)%3?1:-1)*!((edge)%2), (j)+((edge)%3?1:-1)*((edge)%2))] [((edge)+2)%4] );
+                       if(GLUES_MATCH(fp,i,j,n,edge)){
+                           dprintf("Glues have matched, proceeding with binding\n");
+                           change_cell(fp,i,j,n);
+                       }
+                   }
+                   else
+                       change_cell(fp,i,j,n);
+
+                   dprintf("Completed Change of Tile State\n");
                }
 
                /* TILE REMOVAL */
 
-               if (n==0) {  
+               if (n==0) {
                   int d, k, dn, di[7], dj[7], oldns[7], removals[7];
                   if      (chunk==0 && !tp->dt_right[oldn]) { 
                      dn=1; di[0]=i; dj[0]=j; 

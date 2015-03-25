@@ -18,7 +18,7 @@
 
 #define evint unsigned long long
 
-#define DEBUG 0
+#define DEBUG 1
 #define dprintf if (DEBUG) printf
 #define d2printf if (DEBUG==2) printf
 
@@ -183,6 +183,8 @@ typedef struct tube_struct {
                            each other and not other types of tiles          */
    double **glue;       /* A generalized version of the strength function:
                            The level of "glue" between various bond types   */
+   int *is_toehold;     /* Boolean array that stores whether a glue is a 
+                         * toehold type or not. */
    int num_bindings;    /* length of strength */
    int *dt_right;     /* The right half of a double tile.  
                          If it doesn't have one, or the tile is the  
@@ -312,7 +314,7 @@ void set_params(tube *tp, int** tileb, double* strength, double **glue,
       double* stoic, double anneal_g, double anneal_t, int updates_per_RC,double anneal_h,double anneal_s,double startC,double endC,double seconds_per_C,int *dt_right, int *dt_left, int hydro, double k, double Gmc, double Gse,
       double Gmch, double Gseh, double Ghyd, 
       double Gas, double Gam, double Gae, double Gah, double Gao, double T, double tinybox,
-      int seed_i, int seed_j, double Gfc, int activatable, double **transition);
+      int seed_i, int seed_j, double Gfc, int activatable, double **transition, int *is_toehold);
 void reset_params(tube *tp, double old_Gmc, double old_Gse,
       double new_Gmc, double new_Gse, double Gseh);
 void recalc_G(flake *fp);
