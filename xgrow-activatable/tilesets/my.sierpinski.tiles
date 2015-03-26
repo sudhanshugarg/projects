@@ -22,16 +22,16 @@ tile edges={
 {0 2 4 0}[0](yellow)   % 15 Protected 5c Rule tile
 {0 2 2 0}[0](white)    % 16 Protected 5d Rule tile
 {3 2 2 3}[0](wheat)    % 17 UnProtected 5e Rule tile
-{0 4 0 0}[0.5](blue)   % 18 Protected 5a Rule tile
-{0 3 0 0}[0](green)    % 19 Protected 5b Rule tile
-{0 3 4 0}[0](yellow)   % 20 Protected 5c Rule tile
-{0 3 2 0}[0](white)    % 21 Protected 5d Rule tile
-{2 3 2 2}[0](orange)   % 22 UnProtected 5e Rule tile
-{0 4 0 0}[0.5](blue)   % 23 Protected 6a Rule tile
-{0 2 0 0}[0](green)    % 24 Protected 6b Rule tile
-{0 2 4 0}[0](yellow)   % 25 Protected 6c Rule tile
-{0 2 3 0}[0](white)    % 26 Protected 6d Rule tile
-{2 2 3 2}[0](cyan)     % 27 UnProtected 6e Rule tile
+{0 4 0 0}[0.5](blue)   % 18 Protected 6a Rule tile
+{0 3 0 0}[0](green)    % 19 Protected 6b Rule tile
+{0 3 4 0}[0](yellow)   % 20 Protected 6c Rule tile
+{0 3 2 0}[0](white)    % 21 Protected 6d Rule tile
+{2 3 2 2}[0](orange)   % 22 UnProtected 6e Rule tile
+{0 4 0 0}[0.5](blue)   % 23 Protected 7a Rule tile
+{0 2 0 0}[0](green)    % 24 Protected 7b Rule tile
+{0 2 4 0}[0](yellow)   % 25 Protected 7c Rule tile
+{0 2 3 0}[0](white)    % 26 Protected 7d Rule tile
+{2 2 3 2}[0](cyan)     % 27 UnProtected 7e Rule tile
 }
 %
 %  VE-00    UE-11    SE-10    RE-01    Bleft    Bright   Corner

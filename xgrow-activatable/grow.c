@@ -75,21 +75,25 @@ unsigned char ring[256];
 #define IS_TOEHOLD_BINDING_STEP(fp,tile1,tile2) (                    \
     1*((fp->tube->is_toehold)[(fp->tube->tileb)[tile1][0]] && \
     ((fp->tube->tileb)[tile1][0] !=  (fp->tube->tileb)[tile2][0]) && \
+    ((fp->tube->tileb)[tile2][0] !=  0) && \
     ((fp->tube->tileb)[tile1][1] ==  (fp->tube->tileb)[tile2][1]) && \
     ((fp->tube->tileb)[tile1][2] ==  (fp->tube->tileb)[tile2][2]) && \
     ((fp->tube->tileb)[tile1][3] ==  (fp->tube->tileb)[tile2][3])) + \
     2*((fp->tube->is_toehold)[(fp->tube->tileb)[tile1][1]] && \
     ((fp->tube->tileb)[tile1][1] !=  (fp->tube->tileb)[tile2][1]) && \
+    ((fp->tube->tileb)[tile2][1] !=  0) && \
     ((fp->tube->tileb)[tile1][0] ==  (fp->tube->tileb)[tile2][0]) && \
     ((fp->tube->tileb)[tile1][2] ==  (fp->tube->tileb)[tile2][2]) && \
     ((fp->tube->tileb)[tile1][3] ==  (fp->tube->tileb)[tile2][3])) + \
     4*((fp->tube->is_toehold)[(fp->tube->tileb)[tile1][2]] && \
     ((fp->tube->tileb)[tile1][2] !=  (fp->tube->tileb)[tile2][2]) && \
+    ((fp->tube->tileb)[tile2][2] !=  0) && \
     ((fp->tube->tileb)[tile1][1] ==  (fp->tube->tileb)[tile2][1]) && \
     ((fp->tube->tileb)[tile1][0] ==  (fp->tube->tileb)[tile2][0]) && \
     ((fp->tube->tileb)[tile1][3] ==  (fp->tube->tileb)[tile2][3])) + \
     8*((fp->tube->is_toehold)[(fp->tube->tileb)[tile1][3]] && \
     ((fp->tube->tileb)[tile1][3] !=  (fp->tube->tileb)[tile2][3]) && \
+    ((fp->tube->tileb)[tile2][3] !=  0) && \
     ((fp->tube->tileb)[tile1][1] ==  (fp->tube->tileb)[tile2][1]) && \
     ((fp->tube->tileb)[tile1][2] ==  (fp->tube->tileb)[tile2][2]) && \
     ((fp->tube->tileb)[tile1][0] ==  (fp->tube->tileb)[tile2][0])) )
@@ -1316,7 +1320,7 @@ void choose_cell(flake *fp, int *ip, int *jp, int *np)
            * state can be changed. Figure out with what rate etc.
            *
            */
-         dprintf("Trying to choose next activatable cell\n");
+         dprintf("choose_cell: an off/change activatable event, Cell(%d,%d)=%d\n",i,j,fp->Cell(i,j));
          sum = calc_rates(fp,i,j,tp->rv);
          if (sum==0) printf("Zero-sum activatable rate was chosen!!!\n");
          r = r * sum;  cum = 0;
@@ -2086,6 +2090,8 @@ void simulate(tube *tp, evint events, double tmax, int emax, int smax, int fsmax
          total_blast_rate+total_rate+new_flake_rate > 0 &&
          (tp->seconds_per_C == 0 || tp->currentC > tp->endC)) {
 
+       dprintf("Starting simulate main loop\ntp->events: %d, emaxL: %d, tmax: %g, tp->t: %g, smax: %d, tp->stat_a: %lld, tp->stat_d: %lld, fsmax: %d, tp->largest_flake_size: %d, smin: %d, total_blast_rate: %g, total_rate: %g, new_flake_rate: %g, tp->seconds_per_C: %g, tp->currentC: %g, tp->endC: %g\n", tp->events, emaxL, tmax, tp->t, smax, tp->stat_a, tp->stat_d, fsmax, tp->largest_flake_size, smin, total_blast_rate, total_rate, new_flake_rate, tp->seconds_per_C , tp->currentC, tp->endC);
+
       /* If all tiles desired by untiltiles are present, then return. [untiltiles] */
       if (untiltiles && tp->all_present) {
          return;
@@ -2575,15 +2581,16 @@ void simulate(tube *tp, evint events, double tmax, int emax, int smax, int fsmax
                     */
                    edge = IS_TOEHOLD_BINDING_STEP(fp,oldn,n);
                    dprintf("Checking if this is a TMSD step: tile %d to %d, edge=%d\n", oldn, n, edge);
-                   //if((edge = IS_TOEHOLD_BINDING_STEP(fp,oldn,n)))
                    if(edge){
                        edge = (int)log2((double)edge);
-                       dprintf("Checking glue matches for tile (%d,%d), edge %d\n", i, j, edge);
 
-                    dprintf("the following: tile glue %d, cell (%d,%d)[%d] = %d\n",  (fp->tube->tileb)[n][edge],  (i)+((edge)%3?1:-1)*!((edge)%2), (j)+((edge)%3?1:-1)*((edge)%2), ((edge)+2)%4, (fp->tube->tileb)[fp->Cell((i)+((edge)%3?1:-1)*!((edge)%2), (j)+((edge)%3?1:-1)*((edge)%2))] [((edge)+2)%4] );
+                    dprintf("Check if Glue matches : Cell(%d,%d)[%d]=%d vs Cell (%d,%d)[%d]=%d\n",  i,j,edge,(fp->tube->tileb)[n][edge],  (i)+((edge)%3?1:-1)*!((edge)%2), (j)+((edge)%3?1:-1)*((edge)%2), ((edge)+2)%4, (fp->tube->tileb)[fp->Cell((i)+((edge)%3?1:-1)*!((edge)%2), (j)+((edge)%3?1:-1)*((edge)%2))] [((edge)+2)%4] );
                        if(GLUES_MATCH(fp,i,j,n,edge)){
                            dprintf("Glues have matched, proceeding with binding\n");
                            change_cell(fp,i,j,n);
+                       }
+                       else{
+                           //Do not increment events, as the glues don't match, and hence this is a non-event. The simulate function will run again, and might choose the same event again, which is fine. It will reach here and stop, and restart again, until another event is chosen, and the simulation continues. This can slow down the simulation, but it should work.
                        }
                    }
                    else
