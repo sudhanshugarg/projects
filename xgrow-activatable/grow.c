@@ -884,12 +884,18 @@ double calc_rates(flake *fp, int i, int j, double *rv)
         * rv[0] has already been calculated - the dissociation
         * rate of this tile.
         * The remaining rates to other states have to be now calculated.
+        * TODO
+        * hack introduced, incase the transition shows -1, then use
+        * the current Gmc value to calculate the rate constant.
         */
        if(rv != NULL){
            dprintf("Computing transitions out of Cell(%d,%d)=%d\n",i,j,n);
            dprintf("rv[0]=%g\n",rv[0]);
            for (c=1; c<=fp->N; c++) {
                rv[c] = tp->transition[n][c]; 
+               if(rv[c] == -1){
+                   rv[c] = tp->k * exp(-1*tp->Gmc);
+               }
                sumr+= rv[c];
            }
            for(c=1;c<=N;c++)

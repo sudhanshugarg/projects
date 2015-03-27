@@ -22,8 +22,8 @@ tile edges={
 binding strengths={2 1 1}
 block=8
 size=64
-Gse=8.03
-Gmc=16
+%Gse=8.03
+%Gmc=16
 update_rate=5000
 pause
 
