@@ -12,7 +12,7 @@ for i=1:rows(data)
 yCenter = (2*data(i,1))*radius;
 %x axis is Gse
 %xCenter = (2*data(i,2)-1)*radius;
-xCenter = (3*(indFile+1))*radius;
+xCenter = (7*(indFile+1))*radius;
 %disp("gmc: "), disp(data(i,1)), disp(", gse: "), disp(data(i,2));
 ratioSize = data(i,5)/maxFlakeSize;
 ratioError = data(i,6)/data(i,5);
@@ -65,16 +65,25 @@ radius = 0.5;
 axis image;
 %xlim([0 (2*gse+1)*radius]);
 %xlim([(2*gse-20)*radius (2*gse+20)*radius]);
-xlim([-1 4*size(filenames,2)+1])
+xlim([0 7*((size(filenames,2)+1)*radius+1)])
 ylim([-2*radius (2*gmc+1)*radius]);
-xlabel("Tile Assembly Model");
+xlabel("Toehold Lengths 1,3,5,7,9 (a=activatable KTAM, k=kTAM)");
+set(gca,'FontName','Helvetica' ,'FontSize',12,'FontWeight','bold','linewidth',2);
 ylabel("Gmc");
 grid on;
 hold on;
 
+xt = [];
+for indFile=1:10
+    xt = [xt 7*(indFile+1)*radius];
+endfor
+set(gca,'xtick',xt);
+set(gca,'xticklabel',{'1,a','1,k','3,a','3,k','5,a', '5,k', '7,a', '7,k', '9,a', '9,k'});
    for indFile = 1:size(filenames,2)
         gmcgse(gmc, gse, maxFlakeSize, filenames{indFile}, indFile);
    endfor
+
+   print ('-dsvg', 'sim-phase.svg', '-S1000,1600');
 
 hold off
 endfunction
