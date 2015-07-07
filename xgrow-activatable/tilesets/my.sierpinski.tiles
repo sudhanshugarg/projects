@@ -1,0 +1,91 @@
+% sierpinski.tiles
+% This tileset contains the 7 tiles corresponding to a DAE-E tile set
+% RE-01, SE-10, UE-11, VE-00 and the (never designed) corner and border tiles.
+tile edges matches {{N E S W}*}
+num tile types=27
+num binding types=4
+tile edges={
+{1 0 0 1}[.1](red)     % 01 Corner
+{1 0 1 2}[0](magenta)  % 02 Unprotected 2c Bright (vertical)
+{2 1 0 1}[0](tan)      % 03 Unprotected 3c Bleft  (horizontal)
+{0 0 4 0}[.5](blue)    % 04 Protected Version 2a Bright (vertical)
+{0 0 1 0}[0](green)    % 05 Protected Version 2b Bright (vertical)
+{0 4 0 0}[.5](blue)    % 06 Protected Version 3a Bleft (horizontal)
+{0 1 0 0}[0](green)    % 07 Protected Version 3b Bleft (horizontal)
+{0 4 0 0}[0.5](blue)   % 08 Protected 4a Rule tile
+{0 3 0 0}[0](green)    % 09 Protected 4b Rule tile
+{0 3 4 0}[0](yellow)   % 10 Protected 4c Rule tile
+{0 3 3 0}[0](white)    % 11 Protected 4d Rule tile
+{3 3 3 3}[0](gold)     % 12 UnProtected 4e Rule tile
+{0 4 0 0}[0.5](blue)   % 13 Protected 5a Rule tile
+{0 2 0 0}[0](green)    % 14 Protected 5b Rule tile
+{0 2 4 0}[0](yellow)   % 15 Protected 5c Rule tile
+{0 2 2 0}[0](white)    % 16 Protected 5d Rule tile
+{3 2 2 3}[0](wheat)    % 17 UnProtected 5e Rule tile
+{0 4 0 0}[0.5](blue)   % 18 Protected 6a Rule tile
+{0 3 0 0}[0](green)    % 19 Protected 6b Rule tile
+{0 3 4 0}[0](yellow)   % 20 Protected 6c Rule tile
+{0 3 2 0}[0](white)    % 21 Protected 6d Rule tile
+{2 3 2 2}[0](orange)   % 22 UnProtected 6e Rule tile
+{0 4 0 0}[0.5](blue)   % 23 Protected 7a Rule tile
+{0 2 0 0}[0](green)    % 24 Protected 7b Rule tile
+{0 2 4 0}[0](yellow)   % 25 Protected 7c Rule tile
+{0 2 3 0}[0](white)    % 26 Protected 7d Rule tile
+{2 2 3 2}[0](cyan)     % 27 UnProtected 7e Rule tile
+}
+%
+%  VE-00    UE-11    SE-10    RE-01    Bleft    Bright   Corner
+%    3        3        2        2        2        1        1 
+%  3   3    3   2    2   3    2   2    1   1    2   0    1   0
+%    3        2        2        3        0        1        0
+%
+binding strengths={2 1 1 0.33}
+toehold glues={4}
+g(1,4)=0.33
+g(2,4)=0.33
+g(3,4)=0.33
+a(4,5)=4
+a(5,4)=4
+a(5,2)=30
+a(6,7)=4
+a(7,6)=4
+a(7,3)=30
+a(8,9)=4
+a(9,8)=4
+a(9,10)=4
+a(10,9)=4
+a(10,11)=4
+a(11,10)=4
+a(11,12)=30
+a(13,14)=4
+a(14,13)=4
+a(14,15)=4
+a(15,14)=4
+a(15,16)=4
+a(16,15)=4
+a(16,17)=30
+a(18,19)=4
+a(19,18)=4
+a(19,20)=4
+a(20,19)=4
+a(20,21)=4
+a(21,20)=4
+a(21,22)=30
+a(23,24)=4
+a(24,23)=4
+a(24,25)=4
+a(25,24)=4
+a(25,26)=4
+a(26,25)=4
+a(26,27)=30
+%block=8
+%size=128
+%Gse=36.24
+%Gmc=8
+update_rate=5000
+%seed=127,127,1
+activatable
+k=3500000
+%pause
+%fsmax=15876
+%datafile=myfile.data

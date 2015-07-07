@@ -1,0 +1,19 @@
+directive sample 500.0 100
+
+rate rc_forward = 3e-3;
+rate hp_forward = 4e-4;
+init I4 10000 |
+init H4 100 |
+init H5 100 |
+init H6 100 |
+init H7 100 |
+init H8 100 |
+init H9 100 |
+init RC 100 |
+I4 + H4 -> {hp_forward} HI4 |
+HI4 + H5 -> {hp_forward} HI45 |
+HI45 + H6 -> {hp_forward} HI456 |
+HI456 + H7 -> {hp_forward} HI4567 |
+HI4567 + H8 -> {hp_forward} HI45678 |
+HI45678 + H9 -> {hp_forward} HI456789 |
+HI456789 + RC -> {rc_forward} TET + HI456789_FQ
