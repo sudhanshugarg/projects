@@ -1,0 +1,28 @@
+% NUPACK 3.0
+% Program: mfe
+% Start time: Wed Jul 22 19:04:05 2015
+% Command: mfe -T 25 -material dna -multi -dangles all -sodium 0.05 -magnesium 0.0125 runs/15_Z_GY 
+% Sequence:  CTACCTTTCTCTTCTCTTAT+AAGAGAGAATAAGAGACAAT
+% v(pi): 1
+% Parameters: DNA, 1998
+% Dangles setting: 2
+% Temperature (C): 25.0
+% Sodium concentration: 0.0500 M
+% Magnesium concentration: 0.0125 M
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% %
+40
+-10.224
+........((((((((((..+)))))).....)))).....
+9	35
+10	34
+11	33
+12	32
+13	26
+14	25
+15	24
+16	23
+17	22
+18	21
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% %
+

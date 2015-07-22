@@ -1,0 +1,331 @@
+Number of Inputs: 30
+Input: 0 : runs/0_MB_X.mfe works
+Input: 0 : runs/0_MB_Y.mfe DOESNT WORK
+Input: 0 : runs/0_MB_Z.mfe DOESNT WORK
+Input: 0 : runs/0_MB_G.mfe works
+Input: 0 : runs/0_MB_GX.mfe works
+Input: 0 : runs/0_MB_GY.mfe works
+Input: 0 : runs/0_Z_X.mfe works
+Input: 0 : runs/0_Z_Y.mfe works
+Input: 0 : runs/0_Z_GX.mfe DOESNT WORK
+Input: 0 : runs/0_Z_GY.mfe DOESNT WORK
+Input: 1 : runs/1_MB_X.mfe works
+Input: 1 : runs/1_MB_Y.mfe DOESNT WORK
+Input: 1 : runs/1_MB_Z.mfe DOESNT WORK
+Input: 1 : runs/1_MB_G.mfe works
+Input: 1 : runs/1_MB_GX.mfe works
+Input: 1 : runs/1_MB_GY.mfe works
+Input: 1 : runs/1_Z_X.mfe works
+Input: 1 : runs/1_Z_Y.mfe works
+Input: 1 : runs/1_Z_GX.mfe DOESNT WORK
+Input: 1 : runs/1_Z_GY.mfe DOESNT WORK
+Input: 2 : runs/2_MB_X.mfe works
+Input: 2 : runs/2_MB_Y.mfe DOESNT WORK
+Input: 2 : runs/2_MB_Z.mfe DOESNT WORK
+Input: 2 : runs/2_MB_G.mfe works
+Input: 2 : runs/2_MB_GX.mfe works
+Input: 2 : runs/2_MB_GY.mfe works
+Input: 2 : runs/2_Z_X.mfe works
+Input: 2 : runs/2_Z_Y.mfe works
+Input: 2 : runs/2_Z_GX.mfe DOESNT WORK
+Input: 2 : runs/2_Z_GY.mfe DOESNT WORK
+Input: 3 : runs/3_MB_X.mfe works
+Input: 3 : runs/3_MB_Y.mfe DOESNT WORK
+Input: 3 : runs/3_MB_Z.mfe DOESNT WORK
+Input: 3 : runs/3_MB_G.mfe works
+Input: 3 : runs/3_MB_GX.mfe works
+Input: 3 : runs/3_MB_GY.mfe works
+Input: 3 : runs/3_Z_X.mfe works
+Input: 3 : runs/3_Z_Y.mfe works
+Input: 3 : runs/3_Z_GX.mfe DOESNT WORK
+Input: 3 : runs/3_Z_GY.mfe DOESNT WORK
+Input: 4 : runs/4_MB_X.mfe works
+Input: 4 : runs/4_MB_Y.mfe DOESNT WORK
+Input: 4 : runs/4_MB_Z.mfe DOESNT WORK
+Input: 4 : runs/4_MB_G.mfe works
+Input: 4 : runs/4_MB_GX.mfe works
+Input: 4 : runs/4_MB_GY.mfe works
+Input: 4 : runs/4_Z_X.mfe works
+Input: 4 : runs/4_Z_Y.mfe works
+Input: 4 : runs/4_Z_GX.mfe DOESNT WORK
+Input: 4 : runs/4_Z_GY.mfe DOESNT WORK
+Input: 5 : runs/5_MB_X.mfe works
+Input: 5 : runs/5_MB_Y.mfe DOESNT WORK
+Input: 5 : runs/5_MB_Z.mfe DOESNT WORK
+Input: 5 : runs/5_MB_G.mfe works
+Input: 5 : runs/5_MB_GX.mfe works
+Input: 5 : runs/5_MB_GY.mfe works
+Input: 5 : runs/5_Z_X.mfe works
+Input: 5 : runs/5_Z_Y.mfe works
+Input: 5 : runs/5_Z_GX.mfe DOESNT WORK
+Input: 5 : runs/5_Z_GY.mfe DOESNT WORK
+Input: 6 : runs/6_MB_X.mfe works
+Input: 6 : runs/6_MB_Y.mfe DOESNT WORK
+Input: 6 : runs/6_MB_Z.mfe DOESNT WORK
+Input: 6 : runs/6_MB_G.mfe works
+Input: 6 : runs/6_MB_GX.mfe works
+Input: 6 : runs/6_MB_GY.mfe works
+Input: 6 : runs/6_Z_X.mfe works
+Input: 6 : runs/6_Z_Y.mfe works
+Input: 6 : runs/6_Z_GX.mfe DOESNT WORK
+Input: 6 : runs/6_Z_GY.mfe DOESNT WORK
+Input: 7 : runs/7_MB_X.mfe works
+Input: 7 : runs/7_MB_Y.mfe DOESNT WORK
+Input: 7 : runs/7_MB_Z.mfe DOESNT WORK
+Input: 7 : runs/7_MB_G.mfe works
+Input: 7 : runs/7_MB_GX.mfe works
+Input: 7 : runs/7_MB_GY.mfe works
+Input: 7 : runs/7_Z_X.mfe works
+Input: 7 : runs/7_Z_Y.mfe works
+Input: 7 : runs/7_Z_GX.mfe DOESNT WORK
+Input: 7 : runs/7_Z_GY.mfe DOESNT WORK
+Input: 8 : runs/8_MB_X.mfe works
+Input: 8 : runs/8_MB_Y.mfe DOESNT WORK
+Input: 8 : runs/8_MB_Z.mfe DOESNT WORK
+Input: 8 : runs/8_MB_G.mfe works
+Input: 8 : runs/8_MB_GX.mfe works
+Input: 8 : runs/8_MB_GY.mfe works
+Input: 8 : runs/8_Z_X.mfe works
+Input: 8 : runs/8_Z_Y.mfe works
+Input: 8 : runs/8_Z_GX.mfe DOESNT WORK
+Input: 8 : runs/8_Z_GY.mfe DOESNT WORK
+Input: 9 : runs/9_MB_X.mfe works
+Input: 9 : runs/9_MB_Y.mfe works
+Input: 9 : runs/9_MB_Z.mfe DOESNT WORK
+Input: 9 : runs/9_MB_G.mfe works
+Input: 9 : runs/9_MB_GX.mfe works
+Input: 9 : runs/9_MB_GY.mfe works
+Input: 9 : runs/9_Z_X.mfe works
+Input: 9 : runs/9_Z_Y.mfe works
+Input: 9 : runs/9_Z_GX.mfe DOESNT WORK
+Input: 9 : runs/9_Z_GY.mfe DOESNT WORK
+Input: 10 : runs/10_MB_X.mfe works
+Input: 10 : runs/10_MB_Y.mfe DOESNT WORK
+Input: 10 : runs/10_MB_Z.mfe DOESNT WORK
+Input: 10 : runs/10_MB_G.mfe works
+Input: 10 : runs/10_MB_GX.mfe works
+Input: 10 : runs/10_MB_GY.mfe works
+Input: 10 : runs/10_Z_X.mfe works
+Input: 10 : runs/10_Z_Y.mfe works
+Input: 10 : runs/10_Z_GX.mfe DOESNT WORK
+Input: 10 : runs/10_Z_GY.mfe DOESNT WORK
+Input: 11 : runs/11_MB_X.mfe works
+Input: 11 : runs/11_MB_Y.mfe DOESNT WORK
+Input: 11 : runs/11_MB_Z.mfe DOESNT WORK
+Input: 11 : runs/11_MB_G.mfe works
+Input: 11 : runs/11_MB_GX.mfe works
+Input: 11 : runs/11_MB_GY.mfe works
+Input: 11 : runs/11_Z_X.mfe works
+Input: 11 : runs/11_Z_Y.mfe works
+Input: 11 : runs/11_Z_GX.mfe DOESNT WORK
+Input: 11 : runs/11_Z_GY.mfe DOESNT WORK
+Input: 12 : runs/12_MB_X.mfe works
+Input: 12 : runs/12_MB_Y.mfe DOESNT WORK
+Input: 12 : runs/12_MB_Z.mfe DOESNT WORK
+Input: 12 : runs/12_MB_G.mfe works
+Input: 12 : runs/12_MB_GX.mfe works
+Input: 12 : runs/12_MB_GY.mfe works
+Input: 12 : runs/12_Z_X.mfe works
+Input: 12 : runs/12_Z_Y.mfe works
+Input: 12 : runs/12_Z_GX.mfe DOESNT WORK
+Input: 12 : runs/12_Z_GY.mfe DOESNT WORK
+Input: 13 : runs/13_MB_X.mfe works
+Input: 13 : runs/13_MB_Y.mfe DOESNT WORK
+Input: 13 : runs/13_MB_Z.mfe DOESNT WORK
+Input: 13 : runs/13_MB_G.mfe works
+Input: 13 : runs/13_MB_GX.mfe works
+Input: 13 : runs/13_MB_GY.mfe works
+Input: 13 : runs/13_Z_X.mfe works
+Input: 13 : runs/13_Z_Y.mfe works
+Input: 13 : runs/13_Z_GX.mfe DOESNT WORK
+Input: 13 : runs/13_Z_GY.mfe DOESNT WORK
+Input: 14 : runs/14_MB_X.mfe works
+Input: 14 : runs/14_MB_Y.mfe DOESNT WORK
+Input: 14 : runs/14_MB_Z.mfe DOESNT WORK
+Input: 14 : runs/14_MB_G.mfe works
+Input: 14 : runs/14_MB_GX.mfe works
+Input: 14 : runs/14_MB_GY.mfe works
+Input: 14 : runs/14_Z_X.mfe works
+Input: 14 : runs/14_Z_Y.mfe works
+Input: 14 : runs/14_Z_GX.mfe DOESNT WORK
+Input: 14 : runs/14_Z_GY.mfe DOESNT WORK
+Input: 15 : runs/15_MB_X.mfe works
+Input: 15 : runs/15_MB_Y.mfe DOESNT WORK
+Input: 15 : runs/15_MB_Z.mfe DOESNT WORK
+Input: 15 : runs/15_MB_G.mfe works
+Input: 15 : runs/15_MB_GX.mfe works
+Input: 15 : runs/15_MB_GY.mfe works
+Input: 15 : runs/15_Z_X.mfe works
+Input: 15 : runs/15_Z_Y.mfe works
+Input: 15 : runs/15_Z_GX.mfe DOESNT WORK
+Input: 15 : runs/15_Z_GY.mfe DOESNT WORK
+Input: 16 : runs/16_MB_X.mfe works
+Input: 16 : runs/16_MB_Y.mfe DOESNT WORK
+Input: 16 : runs/16_MB_Z.mfe DOESNT WORK
+Input: 16 : runs/16_MB_G.mfe works
+Input: 16 : runs/16_MB_GX.mfe works
+Input: 16 : runs/16_MB_GY.mfe works
+Input: 16 : runs/16_Z_X.mfe works
+Input: 16 : runs/16_Z_Y.mfe works
+Input: 16 : runs/16_Z_GX.mfe DOESNT WORK
+Input: 16 : runs/16_Z_GY.mfe DOESNT WORK
+Input: 17 : runs/17_MB_X.mfe works
+Input: 17 : runs/17_MB_Y.mfe DOESNT WORK
+Input: 17 : runs/17_MB_Z.mfe DOESNT WORK
+Input: 17 : runs/17_MB_G.mfe works
+Input: 17 : runs/17_MB_GX.mfe works
+Input: 17 : runs/17_MB_GY.mfe works
+Input: 17 : runs/17_Z_X.mfe works
+Input: 17 : runs/17_Z_Y.mfe works
+Input: 17 : runs/17_Z_GX.mfe DOESNT WORK
+Input: 17 : runs/17_Z_GY.mfe DOESNT WORK
+Input: 18 : runs/18_MB_X.mfe works
+Input: 18 : runs/18_MB_Y.mfe DOESNT WORK
+Input: 18 : runs/18_MB_Z.mfe DOESNT WORK
+Input: 18 : runs/18_MB_G.mfe DOESNT WORK
+Input: 18 : runs/18_MB_GX.mfe works
+Input: 18 : runs/18_MB_GY.mfe DOESNT WORK
+Input: 18 : runs/18_Z_X.mfe works
+Input: 18 : runs/18_Z_Y.mfe works
+Input: 18 : runs/18_Z_GX.mfe DOESNT WORK
+Input: 18 : runs/18_Z_GY.mfe DOESNT WORK
+Input: 19 : runs/19_MB_X.mfe works
+Input: 19 : runs/19_MB_Y.mfe DOESNT WORK
+Input: 19 : runs/19_MB_Z.mfe DOESNT WORK
+Input: 19 : runs/19_MB_G.mfe works
+Input: 19 : runs/19_MB_GX.mfe works
+Input: 19 : runs/19_MB_GY.mfe works
+Input: 19 : runs/19_Z_X.mfe works
+Input: 19 : runs/19_Z_Y.mfe works
+Input: 19 : runs/19_Z_GX.mfe DOESNT WORK
+Input: 19 : runs/19_Z_GY.mfe DOESNT WORK
+Input: 20 : runs/20_MB_X.mfe works
+Input: 20 : runs/20_MB_Y.mfe DOESNT WORK
+Input: 20 : runs/20_MB_Z.mfe DOESNT WORK
+Input: 20 : runs/20_MB_G.mfe works
+Input: 20 : runs/20_MB_GX.mfe works
+Input: 20 : runs/20_MB_GY.mfe works
+Input: 20 : runs/20_Z_X.mfe works
+Input: 20 : runs/20_Z_Y.mfe works
+Input: 20 : runs/20_Z_GX.mfe DOESNT WORK
+Input: 20 : runs/20_Z_GY.mfe DOESNT WORK
+Input: 21 : runs/21_MB_X.mfe works
+Input: 21 : runs/21_MB_Y.mfe DOESNT WORK
+Input: 21 : runs/21_MB_Z.mfe DOESNT WORK
+Input: 21 : runs/21_MB_G.mfe works
+Input: 21 : runs/21_MB_GX.mfe works
+Input: 21 : runs/21_MB_GY.mfe works
+Input: 21 : runs/21_Z_X.mfe works
+Input: 21 : runs/21_Z_Y.mfe works
+Input: 21 : runs/21_Z_GX.mfe DOESNT WORK
+Input: 21 : runs/21_Z_GY.mfe DOESNT WORK
+Input: 22 : runs/22_MB_X.mfe works
+Input: 22 : runs/22_MB_Y.mfe DOESNT WORK
+Input: 22 : runs/22_MB_Z.mfe DOESNT WORK
+Input: 22 : runs/22_MB_G.mfe works
+Input: 22 : runs/22_MB_GX.mfe works
+Input: 22 : runs/22_MB_GY.mfe works
+Input: 22 : runs/22_Z_X.mfe works
+Input: 22 : runs/22_Z_Y.mfe works
+Input: 22 : runs/22_Z_GX.mfe DOESNT WORK
+Input: 22 : runs/22_Z_GY.mfe DOESNT WORK
+Input: 23 : runs/23_MB_X.mfe works
+Input: 23 : runs/23_MB_Y.mfe DOESNT WORK
+Input: 23 : runs/23_MB_Z.mfe DOESNT WORK
+Input: 23 : runs/23_MB_G.mfe works
+Input: 23 : runs/23_MB_GX.mfe works
+Input: 23 : runs/23_MB_GY.mfe works
+Input: 23 : runs/23_Z_X.mfe works
+Input: 23 : runs/23_Z_Y.mfe works
+Input: 23 : runs/23_Z_GX.mfe DOESNT WORK
+Input: 23 : runs/23_Z_GY.mfe DOESNT WORK
+Input: 24 : runs/24_MB_X.mfe works
+Input: 24 : runs/24_MB_Y.mfe DOESNT WORK
+Input: 24 : runs/24_MB_Z.mfe DOESNT WORK
+Input: 24 : runs/24_MB_G.mfe works
+Input: 24 : runs/24_MB_GX.mfe works
+Input: 24 : runs/24_MB_GY.mfe works
+Input: 24 : runs/24_Z_X.mfe works
+Input: 24 : runs/24_Z_Y.mfe works
+Input: 24 : runs/24_Z_GX.mfe DOESNT WORK
+Input: 24 : runs/24_Z_GY.mfe DOESNT WORK
+Input: 25 : runs/25_MB_X.mfe works
+Input: 25 : runs/25_MB_Y.mfe DOESNT WORK
+Input: 25 : runs/25_MB_Z.mfe DOESNT WORK
+Input: 25 : runs/25_MB_G.mfe works
+Input: 25 : runs/25_MB_GX.mfe works
+Input: 25 : runs/25_MB_GY.mfe works
+Input: 25 : runs/25_Z_X.mfe works
+Input: 25 : runs/25_Z_Y.mfe works
+Input: 25 : runs/25_Z_GX.mfe DOESNT WORK
+Input: 25 : runs/25_Z_GY.mfe DOESNT WORK
+Input: 26 : runs/26_MB_X.mfe works
+Input: 26 : runs/26_MB_Y.mfe DOESNT WORK
+Input: 26 : runs/26_MB_Z.mfe DOESNT WORK
+Input: 26 : runs/26_MB_G.mfe works
+Input: 26 : runs/26_MB_GX.mfe works
+Input: 26 : runs/26_MB_GY.mfe works
+Input: 26 : runs/26_Z_X.mfe works
+Input: 26 : runs/26_Z_Y.mfe works
+Input: 26 : runs/26_Z_GX.mfe DOESNT WORK
+Input: 26 : runs/26_Z_GY.mfe DOESNT WORK
+Input: 27 : runs/27_MB_X.mfe works
+Input: 27 : runs/27_MB_Y.mfe DOESNT WORK
+Input: 27 : runs/27_MB_Z.mfe DOESNT WORK
+Input: 27 : runs/27_MB_G.mfe works
+Input: 27 : runs/27_MB_GX.mfe works
+Input: 27 : runs/27_MB_GY.mfe works
+Input: 27 : runs/27_Z_X.mfe works
+Input: 27 : runs/27_Z_Y.mfe works
+Input: 27 : runs/27_Z_GX.mfe DOESNT WORK
+Input: 27 : runs/27_Z_GY.mfe DOESNT WORK
+Input: 28 : runs/28_MB_X.mfe works
+Input: 28 : runs/28_MB_Y.mfe DOESNT WORK
+Input: 28 : runs/28_MB_Z.mfe DOESNT WORK
+Input: 28 : runs/28_MB_G.mfe works
+Input: 28 : runs/28_MB_GX.mfe works
+Input: 28 : runs/28_MB_GY.mfe works
+Input: 28 : runs/28_Z_X.mfe works
+Input: 28 : runs/28_Z_Y.mfe works
+Input: 28 : runs/28_Z_GX.mfe DOESNT WORK
+Input: 28 : runs/28_Z_GY.mfe DOESNT WORK
+Input: 29 : runs/29_MB_X.mfe works
+Input: 29 : runs/29_MB_Y.mfe DOESNT WORK
+Input: 29 : runs/29_MB_Z.mfe DOESNT WORK
+Input: 29 : runs/29_MB_G.mfe works
+Input: 29 : runs/29_MB_GX.mfe works
+Input: 29 : runs/29_MB_GY.mfe DOESNT WORK
+Input: 29 : runs/29_Z_X.mfe works
+Input: 29 : runs/29_Z_Y.mfe works
+Input: 29 : runs/29_Z_GX.mfe DOESNT WORK
+Input: 29 : runs/29_Z_GY.mfe DOESNT WORK
+0 6
+1 6
+2 6
+3 6
+4 6
+5 6
+6 6
+7 6
+8 6
+9 7
+10 6
+11 6
+12 6
+13 6
+14 6
+15 6
+16 6
+17 6
+18 4
+19 6
+20 6
+21 6
+22 6
+23 6
+24 6
+25 6
+26 6
+27 6
+28 6
+29 5
