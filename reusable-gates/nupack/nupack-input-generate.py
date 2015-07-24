@@ -38,7 +38,8 @@ class Strands(object):
                 f.write(inputStrands[whichInput][w[1]]+'\n');
                 f.write('1 2\n')
                 f.close()
-                subprocess.call(['mfe', '-T', '25', '-material', 'dna', '-multi', '-dangles', 'all', '-sodium', '0.05', '-magnesium', '0.0125', fname])
+                runMfe(fname)
+                #subprocess.call(['mfe', '-T', '25', '-material', 'dna', '-multi', '-dangles', 'all', '-sodium', '0.05', '-magnesium', '0.0125', fname])
 
 
     def checkOutput(self,num):
@@ -87,6 +88,120 @@ class Strands(object):
     def runMfe(self, which):
         subprocess.call(['mfe', '-T', '25', '-material', 'dna', '-multi', '-dangles', 'all', '-sodium', '0.05', '-magnesium', '0.0125', str(which)])
 
+    def calculateDomainFreeEnergies(self):
+        strandX = [0 for i in range(5)]
+        strandY = [0 for i in range(5)]
+        strandG = [0 for i in range(7)]
+        #using complex X+G, and breaking up X into 2 strands.
+        seqXG = [self.strand['X'], self.strand['G']]
+
+        ldomain = len(self.strand['X'])/5
+        Xl = self.strand['X'][:ldomain*3]
+        Xr = self.strand['X'][ldomain*2:]
+
+        seqXlG = [Xl, self.strand['G']]
+        seqXrG = [Xr, self.strand['G']]
+
+        #hash the info.
+        strandX[1] = computeMfe(seqXG, 'XG') - computeMfe(seqXrG, 'XrG');
+        strandX[3] = computeMfe(seqXG, 'XG') - computeMfe(seqXlG, 'XlG');
+
+        #using complex Y+G, and breaking up Y into 2 strands.
+        seqYG = [self.strand['Y'], self.strand['G']]
+
+        Yl = self.strand['Y'][:ldomain*3]
+        Yr = self.strand['Y'][ldomain*2:]
+
+        seqYlG = [Yl, self.strand['G']]
+        seqYrG = [Yr, self.strand['G']]
+
+        strandY[1] = computeMfe(seqYG, 'YG') - computeMfe(seqYrG, 'YrG');
+        strandY[3] = computeMfe(seqYG, 'YG') - computeMfe(seqYlG, 'YlG');
+
+        #using complex Z+G, and breaking up Z into 2 strands.
+        seqZG = [self.strand['Z'], self.strand['G']]
+        Zl = self.strand['Z'][:ldomain*4]
+        Zr = self.strand['Z'][ldomain*1:]
+
+        seqZlG = [Zl, self.strand['G']]
+        seqZrG = [Zr, self.strand['G']]
+
+        strandX[2] = computeMfe(seqZG, 'ZG') - computeMfe(seqZrG, 'ZrG');
+        strandY[2] = computeMfe(seqZG, 'ZG') - computeMfe(seqZlG, 'ZlG');
+
+        seqXYG = [self.strand['X'], self.strand['Y'], self.strand['G']]
+        seqDuplexG = [self.strand['G'], reverseComplement(self.strand['G'])]
+        strandG[3] = computeMfe(seqXYG, 'XYG') - computeMfe(seqDuplexG, 'GG');
+
+        ret = []
+        ret.append(strandX)
+        ret.append(strandY)
+        ret.append(strandG)
+        return ret
+
+def reverseComplement(strand):
+    strand = strand.upper()
+    strand = strand.replace('A','X')
+    strand = strand.replace('T','A')
+    strand = strand.replace('X','T')
+
+    strand = strand.replace('G','X')
+    strand = strand.replace('C','G')
+    strand = strand.replace('X','C')
+    return strand
+
+def computeMfe(self, strandList, name):
+    global energyMap
+
+    #hash to reduce reading/writing from files
+    if name in energyMap:
+        return energyMap[name]
+
+    #create a file with input strands
+    when = now.strftime('%b%d_%H%M')
+    fname = DIR + name + '_' + when
+
+    f = open(fname+'.in','w')
+    f.write(len(strandList)+'\n');
+
+    for i in range(len(strandList)):
+        f.write(strandList[i]+'\n');
+    f.close()
+
+    #runmfe on it.
+    runMfe(fname)
+
+    #read the output file
+    comment = '^%'
+    emptyline = '^[ \t]*$'
+    dotparen = '^[.()+]+$'
+    impComment = '^% %'
+    reComment = re.compile(comment)
+    reEmpty = re.compile(emptyline)
+    reDotParen = re.compile(dotparen)
+    reImpComment = re.compile(impComment)
+    ret = 0
+
+    f = open(fname + '.mfe', 'r')
+    lnum = 1
+
+    #Checking each line in the file for the dot paren notation line
+    while 1:
+        line = f.readLine()
+        if line == "":
+            break
+
+        result = reImpComment.match(line)
+        if result != None:
+            line = f.readLine()
+            line = f.readLine()
+            ret = float(line)
+
+    #return the free energy value.
+    f.close()
+    energyMap[name] = ret
+    return ret
+
 def createInputFromNupackDesign(fname):
     global inputStrands
     global nameMap
@@ -117,9 +232,14 @@ def main():
     s = Strands()
     #print s.getStrand('MB')
     s.createInput(num)
-    ret = s.checkOutput(num)
-    for i in range(num):
-        print i, ret[i]
+    #ret = s.checkOutput(num)
+    #for i in range(num):
+    #    print i, ret[i]
+
+    energies = s.calculateDomainFreeEnergies()
+    for i in range(3):
+        for j in range(3):
+            print energies[i][1], energies[i][2], energies[i][3], '\n'
 
 #GlOBAL Declarations here
 nameMap = dict()
@@ -142,6 +262,8 @@ checkMap[6] = 'Z X'
 checkMap[7] = 'Z Y'
 checkMap[8] = 'Z GX'
 checkMap[9] = 'Z GY'
+
+energyMap = dict()
 
 DIR='runs/'
 
