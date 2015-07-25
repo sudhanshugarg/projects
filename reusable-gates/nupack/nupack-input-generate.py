@@ -1,5 +1,70 @@
 import re, string, sys
 import subprocess
+import datetime
+
+    
+def runMfe(which):
+   subprocess.call(['mfe', '-T', '25', '-material', 'dna', '-multi', '-dangles', 'all', '-sodium', '0.05', '-magnesium', '0.0125', str(which)])
+
+def computeMfe(strandList, name):
+    global energyMap
+
+    #hash to reduce reading/writing from files
+    if name in energyMap:
+        return energyMap[name]
+
+    now = datetime.datetime.now()
+    #create a file with input strands
+    when = now.strftime('%b%d_%H%M')
+    fname = DIR + name + '_' + when
+
+    f = open(fname+'.in','w')
+    f.write(str(len(strandList))+'\n');
+
+    for i in range(len(strandList)):
+        #print i,'#',strandList[i],'#\n'
+        f.write(strandList[i]+'\n');
+    
+    for i in range(len(strandList)):
+        f.write(str(i+1) + ' ')
+    f.write('\n')
+    f.close()
+
+    #runmfe on it.
+    runMfe(fname)
+
+    #read the output file
+    comment = '^%'
+    emptyline = '^[ \t]*$'
+    dotparen = '^[.()+]+$'
+    impComment = '^% %'
+    reComment = re.compile(comment)
+    reEmpty = re.compile(emptyline)
+    reDotParen = re.compile(dotparen)
+    reImpComment = re.compile(impComment)
+    ret = 0
+
+    f = open(fname + '.mfe', 'r')
+    lnum = 1
+
+    #Checking each line in the file for the dot paren notation line
+    while 1:
+        line = f.readline()
+        if line == "":
+            break
+
+        result = reImpComment.match(line)
+        if result != None:
+            line = f.readline()
+            line = f.readline()
+            ret = float(line)
+            break
+
+    #return the free energy value.
+    f.close()
+    energyMap[name] = ret
+    return ret
+
 
 class Strands(object):
     def __init__(self):
@@ -85,9 +150,6 @@ class Strands(object):
 
         return ret
 
-    def runMfe(self, which):
-        subprocess.call(['mfe', '-T', '25', '-material', 'dna', '-multi', '-dangles', 'all', '-sodium', '0.05', '-magnesium', '0.0125', str(which)])
-
     def calculateDomainFreeEnergies(self):
         strandX = [0 for i in range(5)]
         strandY = [0 for i in range(5)]
@@ -131,7 +193,7 @@ class Strands(object):
 
         seqXYG = [self.strand['X'], self.strand['Y'], self.strand['G']]
         seqDuplexG = [self.strand['G'], reverseComplement(self.strand['G'])]
-        strandG[3] = computeMfe(seqXYG, 'XYG') - computeMfe(seqDuplexG, 'GG');
+        strandG[3] = computeMfe(seqXYG, 'GG') - computeMfe(seqDuplexG, 'XYG');
 
         ret = []
         ret.append(strandX)
@@ -148,59 +210,8 @@ def reverseComplement(strand):
     strand = strand.replace('G','X')
     strand = strand.replace('C','G')
     strand = strand.replace('X','C')
+    strand = strand[::-1]
     return strand
-
-def computeMfe(self, strandList, name):
-    global energyMap
-
-    #hash to reduce reading/writing from files
-    if name in energyMap:
-        return energyMap[name]
-
-    #create a file with input strands
-    when = now.strftime('%b%d_%H%M')
-    fname = DIR + name + '_' + when
-
-    f = open(fname+'.in','w')
-    f.write(len(strandList)+'\n');
-
-    for i in range(len(strandList)):
-        f.write(strandList[i]+'\n');
-    f.close()
-
-    #runmfe on it.
-    runMfe(fname)
-
-    #read the output file
-    comment = '^%'
-    emptyline = '^[ \t]*$'
-    dotparen = '^[.()+]+$'
-    impComment = '^% %'
-    reComment = re.compile(comment)
-    reEmpty = re.compile(emptyline)
-    reDotParen = re.compile(dotparen)
-    reImpComment = re.compile(impComment)
-    ret = 0
-
-    f = open(fname + '.mfe', 'r')
-    lnum = 1
-
-    #Checking each line in the file for the dot paren notation line
-    while 1:
-        line = f.readLine()
-        if line == "":
-            break
-
-        result = reImpComment.match(line)
-        if result != None:
-            line = f.readLine()
-            line = f.readLine()
-            ret = float(line)
-
-    #return the free energy value.
-    f.close()
-    energyMap[name] = ret
-    return ret
 
 def createInputFromNupackDesign(fname):
     global inputStrands
@@ -236,10 +247,16 @@ def main():
     #for i in range(num):
     #    print i, ret[i]
 
+            #inputStrands[input_num][nameMap[words[0]]] = words[1]
+    s.strand['X'] = inputStrands[0]['X']
+    s.strand['Y'] = inputStrands[0]['Y']
+    s.strand['G'] = inputStrands[0]['G']
+    s.strand['Z'] = inputStrands[0]['Z']
     energies = s.calculateDomainFreeEnergies()
-    for i in range(3):
-        for j in range(3):
-            print energies[i][1], energies[i][2], energies[i][3], '\n'
+    print energies
+    #for i in range(3):
+    #    for j in range(3):
+    #        print energies[i][1], energies[i][2], energies[i][3], '\n'
 
 #GlOBAL Declarations here
 nameMap = dict()
