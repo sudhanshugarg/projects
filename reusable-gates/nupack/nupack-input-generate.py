@@ -2,7 +2,7 @@ import re, string, sys
 import subprocess
 import datetime
 
-    
+
 def runMfe(which):
    subprocess.call(['mfe', '-T', '25', '-material', 'dna', '-multi', '-dangles', 'all', '-sodium', '0.05', '-magnesium', '0.0125', str(which)])
 
@@ -24,7 +24,7 @@ def computeMfe(strandList, name):
     for i in range(len(strandList)):
         #print i,'#',strandList[i],'#\n'
         f.write(strandList[i]+'\n');
-    
+
     for i in range(len(strandList)):
         f.write(str(i+1) + ' ')
     f.write('\n')
@@ -88,14 +88,29 @@ class Strands(object):
         else:
             return 'MB:'+self.strand[which]
 
-    def createInput(self,num):
+    def sieveBadInput(self,num):
         global inputStrands
         global nameMap
         global checkMap
+        actualNum = 0
         for whichInput in range(num):
+            #check if all domains match required criteria.
+            self.strand['X'] = inputStrands[whichInput]['X']
+            self.strand['Y'] = inputStrands[whichInput]['Y']
+            self.strand['G'] = inputStrands[whichInput]['G']
+            self.strand['Z'] = inputStrands[whichInput]['Z']
+            energies = self.calculateDomainFreeEnergies(str(whichInput))
+            print "Input: ", whichInput, " energies: ", energies
+            if energies[3] != 7:
+                print "This input, ", whichInput, ", does not work: ", energies[3], "\n"
+                continue
+
+
+            print "This input, ", whichInput, ", Works!\n"
+
             for i in range(len(checkMap)):
                 w = checkMap[i].split()
-                fname = DIR + str(whichInput) + '_' + w[0] + '_' + w[1]
+                fname = DIR + str(actualNum) + '_' + w[0] + '_' + w[1]
 
                 f = open(fname+'.in','w')
                 f.write('2\n')
@@ -106,6 +121,9 @@ class Strands(object):
                 runMfe(fname)
                 #subprocess.call(['mfe', '-T', '25', '-material', 'dna', '-multi', '-dangles', 'all', '-sodium', '0.05', '-magnesium', '0.0125', fname])
 
+            actualNum += 1
+
+        return actualNum
 
     def checkOutput(self,num):
         comment = '^%'
@@ -150,7 +168,7 @@ class Strands(object):
 
         return ret
 
-    def calculateDomainFreeEnergies(self):
+    def calculateDomainFreeEnergies(self, inputName):
         strandX = [0 for i in range(5)]
         strandY = [0 for i in range(5)]
         strandG = [0 for i in range(7)]
@@ -165,8 +183,8 @@ class Strands(object):
         seqXrG = [Xr, self.strand['G']]
 
         #hash the info.
-        strandX[1] = computeMfe(seqXG, 'XG') - computeMfe(seqXrG, 'XrG');
-        strandX[3] = computeMfe(seqXG, 'XG') - computeMfe(seqXlG, 'XlG');
+        strandX[1] = round(computeMfe(seqXG, 'XG'+inputName) - computeMfe(seqXrG, 'XrG'+inputName),2);
+        strandX[3] = round(computeMfe(seqXG, 'XG'+inputName) - computeMfe(seqXlG, 'XlG'+inputName),2);
 
         #using complex Y+G, and breaking up Y into 2 strands.
         seqYG = [self.strand['Y'], self.strand['G']]
@@ -177,8 +195,8 @@ class Strands(object):
         seqYlG = [Yl, self.strand['G']]
         seqYrG = [Yr, self.strand['G']]
 
-        strandY[1] = computeMfe(seqYG, 'YG') - computeMfe(seqYrG, 'YrG');
-        strandY[3] = computeMfe(seqYG, 'YG') - computeMfe(seqYlG, 'YlG');
+        strandY[1] = round(computeMfe(seqYG, 'YG'+inputName) - computeMfe(seqYrG, 'YrG'+inputName),2);
+        strandY[3] = round(computeMfe(seqYG, 'YG'+inputName) - computeMfe(seqYlG, 'YlG'+inputName),2);
 
         #using complex Z+G, and breaking up Z into 2 strands.
         seqZG = [self.strand['Z'], self.strand['G']]
@@ -188,17 +206,32 @@ class Strands(object):
         seqZlG = [Zl, self.strand['G']]
         seqZrG = [Zr, self.strand['G']]
 
-        strandX[2] = computeMfe(seqZG, 'ZG') - computeMfe(seqZrG, 'ZrG');
-        strandY[2] = computeMfe(seqZG, 'ZG') - computeMfe(seqZlG, 'ZlG');
+        strandX[2] = round(computeMfe(seqZG, 'ZG'+inputName) - computeMfe(seqZrG, 'ZrG'+inputName),2);
+        strandY[2] = round(computeMfe(seqZG, 'ZG'+inputName) - computeMfe(seqZlG, 'ZlG'+inputName),2);
 
         seqXYG = [self.strand['X'], self.strand['Y'], self.strand['G']]
         seqDuplexG = [self.strand['G'], reverseComplement(self.strand['G'])]
-        strandG[3] = computeMfe(seqXYG, 'GG') - computeMfe(seqDuplexG, 'XYG');
+        strandG[3] = round(computeMfe(seqDuplexG, 'GG'+inputName) - computeMfe(seqXYG, 'XYG'+inputName),2);
+
+        #lower and higher thresholds
+        lowT = -7
+        highT = -9
+        goodDomains = 0
+        for i in range(3):
+            j = i+1
+            if(strandX[j] <= lowT and strandX[j] >= highT):
+                goodDomains += 1
+            if(strandY[j] <= lowT and strandY[j] >= highT):
+                goodDomains += 1
+
+        if(strandG[3] <= lowT and strandG[3] >= highT):
+            goodDomains += 1
 
         ret = []
         ret.append(strandX)
         ret.append(strandY)
         ret.append(strandG)
+        ret.append(goodDomains)
         return ret
 
 def reverseComplement(strand):
@@ -238,34 +271,22 @@ def createInputFromNupackDesign(fname):
 
 def main():
     num = createInputFromNupackDesign('nd')
-    #num = 1
     print "Number of Inputs: " + str(num)
     s = Strands()
     #print s.getStrand('MB')
-    s.createInput(num)
-    #ret = s.checkOutput(num)
-    #for i in range(num):
-    #    print i, ret[i]
-
-            #inputStrands[input_num][nameMap[words[0]]] = words[1]
-    s.strand['X'] = inputStrands[0]['X']
-    s.strand['Y'] = inputStrands[0]['Y']
-    s.strand['G'] = inputStrands[0]['G']
-    s.strand['Z'] = inputStrands[0]['Z']
-    energies = s.calculateDomainFreeEnergies()
-    print energies
-    #for i in range(3):
-    #    for j in range(3):
-    #        print energies[i][1], energies[i][2], energies[i][3], '\n'
+    newNum = s.sieveBadInput(num)
+    ret = s.checkOutput(newNum)
+    for i in range(newNum):
+        print i, ret[i]
 
 #GlOBAL Declarations here
 nameMap = dict()
-nameMap['T4_X_strand'] = 'X'
-nameMap['T4_Y_strand'] = 'Y'
-nameMap['T4_Z_strand'] = 'Z'
-nameMap['T4_G_strand'] = 'G'
-nameMap['T4_GX_strand'] = 'GX'
-nameMap['T4_GY_strand'] = 'GY'
+nameMap['T5_X_strand'] = 'X'
+nameMap['T5_Y_strand'] = 'Y'
+nameMap['T5_Z_strand'] = 'Z'
+nameMap['T5_G_strand'] = 'G'
+nameMap['T5_GX_strand'] = 'GX'
+nameMap['T5_GY_strand'] = 'GY'
 nameMap['MB_strand'] = 'MB'
 
 checkMap = dict()
