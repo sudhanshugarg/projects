@@ -6,6 +6,7 @@
 #include<sstream>
 #include<fstream>
 #include<unistd.h>
+#include<set>
 #include "STRAND.h"
 using namespace std;
 
@@ -463,6 +464,26 @@ vector<STRAND> DNAMotif::getStrands(void){
     cerr << "in the dnamotif getStrands " << endl;
 }
 
+set<string> DNAMotif::getUniqueDomains(void){
+    set<string> ret, current;
+    set<string>::iterator it;
+    for(int i=0;i<4;i++){
+        if(andStrand[i] != NULL){
+            current = andStrand[i]->getUniqueDomains();
+            for(it = current.begin(); it != current.end(); it++)
+                ret.insert(*it);
+        }
+        if(gateStrand[i] != NULL){
+            current = gateStrand[i]->getUniqueDomains();
+            for(it = current.begin(); it != current.end(); it++)
+                ret.insert(*it);
+        }
+    }
+    return ret;
+    cerr << "in the dnamotif getUniqueDomains " << endl;
+}
+
+
 
 void DNAMotif::constructCRN(const string &id1, const string &id2, const int &f1, const int &f2){
     if(f1){
@@ -643,6 +664,18 @@ vector<string> STRAND::getConcatenatedDomains(int len, int which){
             ret.push_back(twoDomains);
         }
     }
+    return ret;
+}
+
+int STRAND::getNumberOfDomains(void){
+    return name.size();
+}
+
+set<string> STRAND::getUniqueDomains(void){
+    int len = name.size();
+    set<string> ret;
+    for (int i=0;i<len;i++)
+        ret.insert(name[i]);
     return ret;
 }
 
@@ -1000,6 +1033,31 @@ void topologicalSort (vector<vector <int > > &g, vector<int> &ret){
     return;
 }
 
+void printForNupackDesign(int &n, map<int, DNAMotif*> &m, map<int, int> &names){
+    cout 
+        << "material = dna" << endl    
+        << "temperature = 25" << endl
+        << "trials = 10" << endl
+        << "magnesium = 0.0125" << endl    
+        << "sodium = 0.5" << endl   
+        ;
+
+    set<string> allDomains, currDomains;
+    set<string>::iterator it;
+    for(int i=0;i<n;i++){
+        if (i == 0 || i == 7) continue;
+        currDomains = m[i]->getUniqueDomains();
+        for(it = currDomains.begin(); it!=currDomains.end(); it++)
+            allDomains.insert(*it);
+    }
+    for(it = allDomains.begin(); it!=allDomains.end(); it++)
+        cout << "domain " << *it 
+            << " = N5"
+            << endl;
+
+}
+
+
 void print_usage(void){
     cout << "Usage: ./a.out -f <enable fanout> -r <enable reusable> [file]"
         << endl;
@@ -1190,6 +1248,9 @@ int main(int argc, char *argv[])
                 }   
             }
         }
+
+        //print for NUPACK
+        printForNupackDesign(n,m,names);
 
         deleteInput(n, m);
     }
