@@ -468,21 +468,21 @@ set<string> DNAMotif::getUniqueDomains(void){
     set<string> ret, current;
     set<string>::iterator it;
     for(int i=0;i<4;i++){
-        if(andStrand[i] != NULL){
-            current = andStrand[i]->getUniqueDomains();
-            for(it = current.begin(); it != current.end(); it++)
-                ret.insert(*it);
-        }
-        if(gateStrand[i] != NULL){
-            current = gateStrand[i]->getUniqueDomains();
-            for(it = current.begin(); it != current.end(); it++)
-                ret.insert(*it);
-        }
+        current = andStrand[i]->getUniqueDomains();
+        for(it = current.begin(); it != current.end(); it++)
+            ret.insert(*it);
+        current = gateStrand[i]->getUniqueDomains();
+        for(it = current.begin(); it != current.end(); it++)
+            ret.insert(*it);
     }
     return ret;
     cerr << "in the dnamotif getUniqueDomains " << endl;
 }
 
+vector<string> DNAMotif::printNupackStructureAndSequence(void){
+    vector<string> ret;
+    return ret;
+}
 
 
 void DNAMotif::constructCRN(const string &id1, const string &id2, const int &f1, const int &f2){
@@ -588,6 +588,7 @@ void STRAND::push(string s){
         name.push_back(s);
         complement.push_back(0);
     }
+    domainSize.push_back(TOEHOLD_DEFAULT_LENGTH);
 }
 
 string STRAND::getNewDomain(string prefix){
@@ -625,10 +626,12 @@ string STRAND::getID(void){
 void STRAND::createFromVector(vector<string> s){
     name.resize(s.size());
     complement.resize(s.size());
+    domainSize.resize(s.size());
 
     for(int i=0;i<s.size();i++){
         complement[i] = 0;
         name[i] = s[i];
+        domainSize[i] = TOEHOLD_DEFAULT_LENGTH;
 
         int last = s[i].length() - 1;
         if(s[i][last] == '*'){
@@ -677,6 +680,40 @@ set<string> STRAND::getUniqueDomains(void){
     for (int i=0;i<len;i++)
         ret.insert(name[i]);
     return ret;
+}
+
+/*
+vector<string> STRAND::printNupackStructureAndSequence(void){
+    vector<string> ret;
+    ostringstream oss1;
+    string seq;
+    int numDomains = name.size();
+    int len = 0;
+    for(int i=0;i<numDomains;i++){
+        len += domainSize[i];
+        seq += name[i];
+        if(complement[i])
+            seq += "* ";
+        else seq += " ";
+    }
+
+    oss1 << "structure "
+        << getDSDName()
+        << " = U"
+        << len
+        << endl;
+
+    oss1 << getDSDName()
+        << ".seq = "
+        << seq
+        << endl;
+    ret.push_back(oss1.str());
+    cout << oss1.str() << endl;
+}
+*/
+
+int STRAND::getDomainLength(int pos){
+    return domainSize[pos];
 }
 
 typedef class BIT : public DNAMotif{
@@ -736,6 +773,48 @@ typedef class BIT : public DNAMotif{
                 ret.push_back(*andStrand[i]);
             return ret;
         }
+
+        set<string> getUniqueDomains(void){
+            set<string> ret, current;
+            set<string>::iterator it;
+            for(int i=0; i<2; i++){
+                current = andStrand[i]->getUniqueDomains();
+                for(it = current.begin(); it != current.end(); it++)
+                    ret.insert(*it);
+            }
+            return ret;
+        }
+
+        vector<string> printNupackStructureAndSequence(void){
+            vector<string> ret;
+            ostringstream oss1;
+            string seq;
+            int numDomains;
+            int len;
+            for(int bit=0;bit<2;bit++){
+                numDomains = andStrand[bit]->getNumberOfDomains();
+                len = 0;
+                for(int i=0;i<numDomains;i++){
+                    len += andStrand[bit]->getDomainLength(i);
+                    seq += getDomain(bit,i) + " ";
+                }
+
+                oss1 << "structure "
+                    << getDSDName(bit)
+                    << " = U"
+                    << len
+                    << endl;
+
+                oss1 << getDSDName(bit)
+                    << ".seq = "
+                    << seq
+                    << endl;
+                ret.push_back(oss1.str());
+                seq.clear();
+            }
+            cout << oss1.str() << endl;
+            return ret;
+        }
 }BIT;
 
 map<string, int> STRAND::nextNumber;
@@ -747,10 +826,51 @@ typedef class BI_INPUT : public DNAMotif {
             DNAMotif::setType(type);
             id[0] = "A";
             id[0][0] += num;
-            for(int i=0;i<4;i++){
-                andStrand[i] = new STRAND(num);
-                gateStrand[i] = new STRAND(num);
+            for(int bit2=0;bit2<4;bit2++){
+                andStrand[bit2] = new STRAND(num);
+                gateStrand[bit2] = new STRAND(num);
             }
+        }
+
+        vector<string> printNupackStructureAndSequence(void){
+            vector<string> ret;
+            ostringstream oss1;
+            string seq;
+            int numDomains;
+            int len;
+            for(int bit2=0;bit2<4;bit2++){
+                numDomains = andStrand[bit2]->getNumberOfDomains();
+                len = 0;
+                for(int i=0;i<numDomains;i++){
+                    len += andStrand[bit2]->getDomainLength(i);
+                    seq += andStrand[bit2]->getDomain(bit2,i) + " ";
+                }
+
+                numDomains = gateStrand[bit2]->getNumberOfDomains();
+                for(int i=0;i<numDomains;i++){
+                    seq += gateStrand[bit2]->getDomain(bit2,i) + " ";
+                }
+
+                oss1 << "structure "
+                    << getDSDName(bit2)
+                    << " = D"
+                    << len
+                    << " (+ U"
+                    << gateStrand[bit2]->getDomainLength(0)
+                    << ") U"
+                    << gateStrand[bit2]->getDomainLength(6)
+                    << endl;
+
+
+                oss1 << getDSDName(bit2)
+                    << ".seq = "
+                    << seq
+                    << endl;
+                ret.push_back(oss1.str());
+                seq.clear();
+            }
+            cout << oss1.str() << endl;
+            return ret;
         }
 
 }BI_INPUT;
@@ -860,6 +980,66 @@ typedef class NOT : public DNAMotif {
             return ret;
         }
 
+        set<string> getUniqueDomains(void){
+            set<string> ret, current;
+            set<string>::iterator it;
+            for(int i=0; i<2; i++){
+                current = andStrand[i]->getUniqueDomains();
+                for(it = current.begin(); it != current.end(); it++)
+                    ret.insert(*it);
+            }
+            return ret;
+            cerr << "in the NOT getUniqueDomains" << endl;
+        }
+
+        vector<string> printNupackStructureAndSequence(void){
+            vector<string> ret;
+            ostringstream oss1;
+            string seq;
+            int numDomains;
+            int len;
+            for(int bit=0;bit<2;bit++){
+                numDomains = andStrand[bit]->getNumberOfDomains();
+                //Assuming numDomains is always 5.
+                if(numDomains != 5)
+                    throw "number of domains in NOT gate output strand is not equal to 5";
+                len = 0;
+                for(int i=0;i<3;i++){
+                    len += andStrand[bit]->getDomainLength(i);
+                    seq += andStrand[bit]->getDomain(bit,i) + " ";
+                }
+                oss1 << "structure "
+                    << getDSDName(bit)
+                    << " = D"
+                    << len;
+
+                len = 0;
+                for (int i=3; i<5; i++){
+                    len += andStrand[bit]->getDomainLength(i);
+                    seq += andStrand[bit]->getDomain(bit,i) + " ";
+                }
+
+                oss1 << " (U"
+                    << len
+                    << " +) U"
+                    << gateStrand[bit]->getDomainLength(3)
+                    << endl;
+
+                for(int i=0;i<4;i++){
+                    seq += gateStrand[bit]->getDomain(bit,i) + " ";
+                }
+
+                oss1 << getDSDName(bit)
+                    << ".seq = "
+                    << seq
+                    << endl;
+                ret.push_back(oss1.str());
+                seq.clear();
+            }
+            cout << oss1.str() << endl;
+            return ret;
+        }
+
 }NOT;
 
 void deleteInput(int &n, map<int, DNAMotif *> &m){
@@ -889,7 +1069,7 @@ int createInputFile(int &nodes, map<int, int> &names, vector<vector <int> > &g, 
     istringstream issN(nodesStr);
     issN >> nodes;
     string gate, line;
-    int num, e1, e2;
+    int num, e1, e2, e3;
 
     //nand gates, and gates, input strands, output strands
     g.resize(nodes);
@@ -979,10 +1159,11 @@ int createInputFile(int &nodes, map<int, int> &names, vector<vector <int> > &g, 
         else if(gate == "edges"){
             while(getUncommentedInput(inputfile, line) == 1){
                 istringstream edgeIss(line);
-                edgeIss >> e1 >> e2;
-                if(g[names[e1]][names[e2]] != 1){
-                    g[names[e1]][names[e2]] = 1;
-                }
+                edgeIss >> e1 >> e2 >> e3;
+                //e3 = 1 refers to left input, 2 refers to right input.
+                //by default, it is left input, just for convention.
+                //0 refers to no edge
+                g[names[e1]][names[e2]] = e3;
             }
         }
     }
@@ -1002,6 +1183,9 @@ int createInputFile(int &nodes, map<int, int> &names, vector<vector <int> > &g, 
     return 1;
 }
 
+//g is the edges matrix. By default, it contains only 0s, 1s and 2s.
+//for the purposes of the sort, we increment each non-zero value by 2,
+//and at the end, we decrement it back.
 void topologicalSort (vector<vector <int > > &g, vector<int> &ret){
 
     int nodes = g.size();
@@ -1017,7 +1201,7 @@ void topologicalSort (vector<vector <int > > &g, vector<int> &ret){
             if(visited[i]) continue;
             
             for(j=0;j<nodes;j++){
-                if(g[j][i] == 1) break;
+                if(g[j][i] == 1 || g[j][i] == 2) break;
             }
             if(j == nodes) break;
         }
@@ -1026,9 +1210,15 @@ void topologicalSort (vector<vector <int > > &g, vector<int> &ret){
         done--;
 
         for(j=0;j<nodes;j++)
-            if(g[i][j] == 1)
-                g[i][j] = 2;
+            if(g[i][j] != 0)
+                g[i][j] += 2;
 
+    }
+
+    for(i=0;i<nodes;i++){
+        for(j=0;j<nodes;j++)
+            if(g[i][j] != 0)
+                g[i][j] -= 2;
     }
     return;
 }
@@ -1040,10 +1230,13 @@ void printForNupackDesign(int &n, map<int, DNAMotif*> &m, map<int, int> &names){
         << "trials = 10" << endl
         << "magnesium = 0.0125" << endl    
         << "sodium = 0.5" << endl   
+        << endl
         ;
 
     set<string> allDomains, currDomains;
     set<string>::iterator it;
+
+    //Get Domains
     for(int i=0;i<n;i++){
         if (i == 0 || i == 7) continue;
         currDomains = m[i]->getUniqueDomains();
@@ -1054,6 +1247,12 @@ void printForNupackDesign(int &n, map<int, DNAMotif*> &m, map<int, int> &names){
         cout << "domain " << *it 
             << " = N5"
             << endl;
+    cout << endl;
+
+    //Get structure and seq for each dna motif
+    for(int i=0;i<n;i++){
+        m[i]->printNupackStructureAndSequence();
+    }
 
 }
 

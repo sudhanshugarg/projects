@@ -29,6 +29,7 @@ enum TOEHOLD_TYPE {NORMAL, DSD};
 enum CIRCUIT_TYPE {ONE_TIME, REUSABLE, JIANG};
 const string DOMAINPREFIX = "w";
 const string PREFIX2 = "k";
+const int TOEHOLD_DEFAULT_LENGTH = 5;
 
 
 //TT == TRUTH_TABLE
@@ -87,6 +88,7 @@ typedef class DNAMotif{
         virtual string getComplementDomain(int bit, int idx);
         virtual vector<STRAND> getStrands(void);
         virtual set<string> getUniqueDomains(void);
+        virtual vector<string> printNupackStructureAndSequence(void);
 
     private:
         MOTIF_TYPE istype;
@@ -119,10 +121,13 @@ typedef class STRAND : public DNAMotif{
         string getID(void);
         int getNumberOfDomains(void);
         set<string> getUniqueDomains(void);
+        //vector<string> printNupackStructureAndSequence(void);
+        int getDomainLength(int pos=0);
 
     private:
         vector<string> name;
         vector<bool> complement;
+        vector<int> domainSize;
         static map<string, int> nextNumber;
 
         void createFromVector(vector<string> s);
