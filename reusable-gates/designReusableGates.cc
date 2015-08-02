@@ -479,8 +479,20 @@ set<string> DNAMotif::getUniqueDomains(void){
     cerr << "in the dnamotif getUniqueDomains " << endl;
 }
 
-vector<string> DNAMotif::printNupackStructureAndSequence(void){
+vector<string> DNAMotif::printNupackStructureAndSequence(map<int, int> &names,
+        vector<vector<int> >&g){
     vector<string> ret;
+    return ret;
+}
+
+vector<STRAND> DNAMotif::getOutputStrandList(int bit){
+    vector<STRAND> ret;
+    const int *TT_gate;
+    TT_gate = getTruthTable[getType()];
+    for(int i=0;i<4;i++)
+        if(TT_gate[3*i+2] == bit){
+            ret.push_back(*andStrand[i]);
+        }
     return ret;
 }
 
@@ -504,12 +516,14 @@ void DNAMotif::constructCRN(const string &id1, const string &id2, const int &f1,
 STRAND::STRAND(){}
 STRAND::STRAND(int num){
     DNAMotif::setType(STRAND_MOTIF);
+    idNum = num;
     id[0] = "A";
     id[0][0] += num;
 }
 
 STRAND::STRAND(const string &s, int num){
     DNAMotif::setType(STRAND_MOTIF);
+    idNum = num;
     id[0] = "A";
     id[0][0] += num;
     init(s);
@@ -682,36 +696,6 @@ set<string> STRAND::getUniqueDomains(void){
     return ret;
 }
 
-/*
-vector<string> STRAND::printNupackStructureAndSequence(void){
-    vector<string> ret;
-    ostringstream oss1;
-    string seq;
-    int numDomains = name.size();
-    int len = 0;
-    for(int i=0;i<numDomains;i++){
-        len += domainSize[i];
-        seq += name[i];
-        if(complement[i])
-            seq += "* ";
-        else seq += " ";
-    }
-
-    oss1 << "structure "
-        << getDSDName()
-        << " = U"
-        << len
-        << endl;
-
-    oss1 << getDSDName()
-        << ".seq = "
-        << seq
-        << endl;
-    ret.push_back(oss1.str());
-    cout << oss1.str() << endl;
-}
-*/
-
 int STRAND::getDomainLength(int pos){
     return domainSize[pos];
 }
@@ -724,6 +708,7 @@ typedef class BIT : public DNAMotif{
             DNAMotif::setType(BIT_MOTIF);
             id[0] = "A";
             id[0][0] += num;
+            idNum = num;
             andStrand[0] = new STRAND(s0,num);
             andStrand[1] = new STRAND(s1,num);
         }
@@ -785,7 +770,8 @@ typedef class BIT : public DNAMotif{
             return ret;
         }
 
-        vector<string> printNupackStructureAndSequence(void){
+        vector<string> printNupackStructureAndSequence(map<int, int> &names,
+                vector<vector<int> >&g){
             vector<string> ret;
             ostringstream oss1;
             string seq;
@@ -815,6 +801,12 @@ typedef class BIT : public DNAMotif{
             cout << oss1.str() << endl;
             return ret;
         }
+
+        vector<STRAND> getOutputStrandList(int bit){
+            vector<STRAND> ret;
+            ret.push_back(*andStrand[bit]);
+            return ret;
+        }
 }BIT;
 
 map<string, int> STRAND::nextNumber;
@@ -826,19 +818,46 @@ typedef class BI_INPUT : public DNAMotif {
             DNAMotif::setType(type);
             id[0] = "A";
             id[0][0] += num;
+            idNum = num;
             for(int bit2=0;bit2<4;bit2++){
                 andStrand[bit2] = new STRAND(num);
                 gateStrand[bit2] = new STRAND(num);
             }
         }
 
-        vector<string> printNupackStructureAndSequence(void){
+
+        vector<string> printNupackStructureAndSequence(map<int, int> &names,
+                vector<vector<int> >&g){
             vector<string> ret;
             ostringstream oss1;
             string seq;
             int numDomains;
             int len;
+
+            //try and get the two other left and right input strands that feed 
+            //into this bi_input gate.
+            int nodes = g.size();
+            int lInput=0, rInput=0;
+            for(int j=0;j<nodes;j++){
+                if(g[names[idNum]][j] == 1)
+                    lInput = j;
+                if(g[names[idNum]][j] == 2)
+                    rInput = j;
+            }
+            if(!lInput || !rInput)
+                throw "Incorrect input given, the gate should have two inputs";
+
+            vector<STRAND> lOutputStrands, rOutputStrands;
+
             for(int bit2=0;bit2<4;bit2++){
+
+                //get the output strands from the left input.
+                int lbit = bit2/2;
+                int rbit = bit2%2;
+                lOutputStrands = m[names[lInput]]->getOutputStrandList(lbit);
+                rOutputStrands = m[names[rInput]]->getOutputStrandList(rbit);
+
+                //now, associate the left output strands with the current gate strand, and the right output strands with the current gate strand, and then a combination of both.
                 numDomains = andStrand[bit2]->getNumberOfDomains();
                 len = 0;
                 for(int i=0;i<numDomains;i++){
@@ -853,7 +872,7 @@ typedef class BI_INPUT : public DNAMotif {
 
                 oss1 << "structure "
                     << getDSDName(bit2)
-                    << " = D"
+                    << "_ZG = D"
                     << len
                     << " (+ U"
                     << gateStrand[bit2]->getDomainLength(0)
@@ -882,6 +901,7 @@ typedef class NOT : public DNAMotif {
             DNAMotif::setType(NOT_MOTIF);
             id[0] = "A";
             id[0][0] += num;
+            idNum = num;
             for(int i=0;i<2;i++){
                 andStrand[i] = new STRAND();
                 gateStrand[i] = new STRAND();
@@ -992,7 +1012,8 @@ typedef class NOT : public DNAMotif {
             cerr << "in the NOT getUniqueDomains" << endl;
         }
 
-        vector<string> printNupackStructureAndSequence(void){
+        vector<string> printNupackStructureAndSequence(map<int, int> &names,
+                vector<vector<int> >&g){
             vector<string> ret;
             ostringstream oss1;
             string seq;
@@ -1037,6 +1058,12 @@ typedef class NOT : public DNAMotif {
                 seq.clear();
             }
             cout << oss1.str() << endl;
+            return ret;
+        }
+
+        vector<STRAND> getOutputStrandList(int bit){
+            vector<STRAND> ret;
+            ret.push_back(*andStrand[bit]);
             return ret;
         }
 
@@ -1223,7 +1250,11 @@ void topologicalSort (vector<vector <int > > &g, vector<int> &ret){
     return;
 }
 
-void printForNupackDesign(int &n, map<int, DNAMotif*> &m, map<int, int> &names){
+void printForNupackDesign(int &n, 
+        map<int, DNAMotif*> &m, 
+        map<int, int> &names,
+        vector< vector< int> > &g
+        ){
     cout 
         << "material = dna" << endl    
         << "temperature = 25" << endl
@@ -1251,7 +1282,7 @@ void printForNupackDesign(int &n, map<int, DNAMotif*> &m, map<int, int> &names){
 
     //Get structure and seq for each dna motif
     for(int i=0;i<n;i++){
-        m[i]->printNupackStructureAndSequence();
+        m[i]->printNupackStructureAndSequence(names,g);
     }
 
 }
@@ -1449,7 +1480,7 @@ int main(int argc, char *argv[])
         }
 
         //print for NUPACK
-        printForNupackDesign(n,m,names);
+        printForNupackDesign(n,m,names,g);
 
         deleteInput(n, m);
     }
