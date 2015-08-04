@@ -88,7 +88,9 @@ typedef class DNAMotif{
         virtual string getComplementDomain(int bit, int idx);
         virtual vector<STRAND> getStrands(void);
         virtual set<string> getUniqueDomains(void);
-        virtual vector<string> printNupackStructureAndSequence(map<int, int> &names, vector<vector<int> >&g);
+        virtual vector<string> printNupackStructureAndSequence(
+                map<int, DNAMotif*> &m, 
+                map<int, int> &names, vector<vector<int> >&g);
         virtual vector<STRAND> getOutputStrandList(int bit=0);
 
     private:

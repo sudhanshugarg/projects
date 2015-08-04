@@ -479,13 +479,16 @@ set<string> DNAMotif::getUniqueDomains(void){
     cerr << "in the dnamotif getUniqueDomains " << endl;
 }
 
-vector<string> DNAMotif::printNupackStructureAndSequence(map<int, int> &names,
+vector<string> DNAMotif::printNupackStructureAndSequence(
+        map<int, DNAMotif*> &m, 
+        map<int, int> &names,
         vector<vector<int> >&g){
     vector<string> ret;
     return ret;
 }
 
 vector<STRAND> DNAMotif::getOutputStrandList(int bit){
+    cerr << "or having trouble here it seems" << endl;
     vector<STRAND> ret;
     const int *TT_gate;
     TT_gate = getTruthTable[getType()];
@@ -770,7 +773,9 @@ typedef class BIT : public DNAMotif{
             return ret;
         }
 
-        vector<string> printNupackStructureAndSequence(map<int, int> &names,
+        vector<string> printNupackStructureAndSequence(
+                map<int, DNAMotif*> &m, 
+                map<int, int> &names,
                 vector<vector<int> >&g){
             vector<string> ret;
             ostringstream oss1;
@@ -804,6 +809,7 @@ typedef class BIT : public DNAMotif{
 
         vector<STRAND> getOutputStrandList(int bit){
             vector<STRAND> ret;
+            cerr << "having trouble here it seems" << endl;
             ret.push_back(*andStrand[bit]);
             return ret;
         }
@@ -826,7 +832,73 @@ typedef class BI_INPUT : public DNAMotif {
         }
 
 
-        vector<string> printNupackStructureAndSequence(map<int, int> &names,
+        vector<string> lInputGateNupackComplex(int bit2, vector<STRAND> &output, STRAND &gate){
+            int count = output.size();
+            ostringstream oss1;
+            string seq,subname;
+            int len1, len2, numDomains;
+            vector<string> ret;
+            cerr << "in lInputGate function, count=" << count << endl;
+            for(int i=0;i<count;i++){
+                //bind output[i] and the gate strand together.
+                numDomains = output[i].getNumberOfDomains();
+                if(numDomains != 5)
+                    throw "Incorrect number of domains in left output strand";
+
+                len1 = 0;
+                for(int j=1;j<4;j++){
+                    len1 += output[i].getDomainLength(j);
+                }
+
+                numDomains = gate.getNumberOfDomains();
+                if(numDomains != 7)
+                    throw "Incorrect number of domains in gate";
+
+                len2 = 0;
+                for(int j=0;j<4;j++){
+                    len2 += gate.getDomainLength(j);
+                }
+
+                subname = "_XG";
+                if(count > 1){
+                    subname += "_a";
+                    subname[subname.length()-1]+=i;
+                }
+
+                oss1 << "structure "
+                    << getDSDName(bit2)
+                    << subname << " = U"
+                    << output[i].getDomainLength(0)
+                    << " D"
+                    << len1
+                    << " ( U"
+                    << output[i].getDomainLength(4)
+                    << "+ U"
+                    << len2
+                    << ")"
+                    << endl;
+
+                seq.clear();
+                for(int j=0;j<5;j++)
+                    seq += output[i].getDomain(i,j) + " ";
+                for(int j=0;j<7;j++)
+                    seq += gate.getDomain(-1,j) + " ";
+
+                oss1 << getDSDName(bit2)
+                    << subname << ".seq = "
+                    << seq
+                    << endl;
+                ret.push_back(oss1.str());
+            }
+            cout << oss1.str() << endl;
+            cerr << "exiting lInputGate function" << endl;
+            return ret;
+        }
+        //vector<string> rInputGateNupackComplex(vector<STRAND> output, STRAND gate);
+        //vector<string> bothInputGateNupackComplex(vector<STRAND> output, STRAND gate);
+        vector<string> printNupackStructureAndSequence(
+                map<int, DNAMotif*> &m, 
+                map<int, int> &names,
                 vector<vector<int> >&g){
             vector<string> ret;
             ostringstream oss1;
@@ -837,15 +909,23 @@ typedef class BI_INPUT : public DNAMotif {
             //try and get the two other left and right input strands that feed 
             //into this bi_input gate.
             int nodes = g.size();
-            int lInput=0, rInput=0;
+            int lInput=-1, rInput=-1;
             for(int j=0;j<nodes;j++){
-                if(g[names[idNum]][j] == 1)
+                if(g[j][names[idNum]] == 1)
                     lInput = j;
-                if(g[names[idNum]][j] == 2)
+                if(g[j][names[idNum]] == 2)
                     rInput = j;
             }
-            if(!lInput || !rInput)
+            cerr << "lInput=" << lInput << ", rInput=" << rInput << endl;
+            if(lInput==-1 || rInput==-1){
+                for(int j=0;j<nodes;j++){
+                    for(int k=0;k<nodes;k++){
+                        cerr << g[j][k] << " ";
+                    }
+                    cerr << endl;
+                }
                 throw "Incorrect input given, the gate should have two inputs";
+            }
 
             vector<STRAND> lOutputStrands, rOutputStrands;
 
@@ -854,11 +934,18 @@ typedef class BI_INPUT : public DNAMotif {
                 //get the output strands from the left input.
                 int lbit = bit2/2;
                 int rbit = bit2%2;
-                lOutputStrands = m[names[lInput]]->getOutputStrandList(lbit);
-                rOutputStrands = m[names[rInput]]->getOutputStrandList(rbit);
+                cerr << "functioning right here." << endl;
+                lOutputStrands = m[lInput]->getOutputStrandList(lbit);
+                rOutputStrands = m[rInput]->getOutputStrandList(rbit);
 
-                //now, associate the left output strands with the current gate strand, and the right output strands with the current gate strand, and then a combination of both.
+                lInputGateNupackComplex(bit2, lOutputStrands, *gateStrand[bit2]);
+                cerr << "passed the output strand " << bit2 << endl;
+
+                //now, associate the left output strands with the current gate 
+                //strand, and the right output strands with the current gate 
+                //strand, and then a combination of both.
                 numDomains = andStrand[bit2]->getNumberOfDomains();
+                cerr << "passed the 2 output strand " << bit2 << endl;
                 len = 0;
                 for(int i=0;i<numDomains;i++){
                     len += andStrand[bit2]->getDomainLength(i);
@@ -870,6 +957,7 @@ typedef class BI_INPUT : public DNAMotif {
                     seq += gateStrand[bit2]->getDomain(bit2,i) + " ";
                 }
 
+                cerr << "passed the gate strand " << bit2 << endl;
                 oss1 << "structure "
                     << getDSDName(bit2)
                     << "_ZG = D"
@@ -882,7 +970,7 @@ typedef class BI_INPUT : public DNAMotif {
 
 
                 oss1 << getDSDName(bit2)
-                    << ".seq = "
+                    << "_ZG.seq = "
                     << seq
                     << endl;
                 ret.push_back(oss1.str());
@@ -1012,7 +1100,9 @@ typedef class NOT : public DNAMotif {
             cerr << "in the NOT getUniqueDomains" << endl;
         }
 
-        vector<string> printNupackStructureAndSequence(map<int, int> &names,
+        vector<string> printNupackStructureAndSequence(
+                map<int, DNAMotif*> &m, 
+                map<int, int> &names,
                 vector<vector<int> >&g){
             vector<string> ret;
             ostringstream oss1;
@@ -1088,7 +1178,7 @@ int createInputFile(int &nodes, map<int, int> &names, vector<vector <int> > &g, 
     ifstream inputfile;
     inputfile.open(filename);
     if(!inputfile) {
-        cout << "Error in file:" << filename << endl;
+        cerr << "Error in file:" << filename << endl;
         return 0;
     }
     string nodesStr;
@@ -1282,7 +1372,8 @@ void printForNupackDesign(int &n,
 
     //Get structure and seq for each dna motif
     for(int i=0;i<n;i++){
-        m[i]->printNupackStructureAndSequence(names,g);
+        cerr << "and that is a wrap" << endl;
+        m[i]->printNupackStructureAndSequence(m,names,g);
     }
 
 }
@@ -1323,6 +1414,12 @@ int main(int argc, char *argv[])
             return -1;
         }
         cerr << "Input file read" << endl;
+
+        for(int i=0;i<n;i++){
+            for(int j=0;j<n;j++)
+                cout << g[i][j] << " ";
+            cout << endl;
+        }
 
         vector<int> sorted;
         sorted.clear();
