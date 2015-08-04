@@ -871,16 +871,16 @@ typedef class BI_INPUT : public DNAMotif {
                     << output[i].getDomainLength(0)
                     << " D"
                     << len1
-                    << " ( U"
+                    << " (U"
                     << output[i].getDomainLength(4)
-                    << "+ U"
+                    << " + U"
                     << len2
                     << ")"
                     << endl;
 
                 seq.clear();
                 for(int j=0;j<5;j++)
-                    seq += output[i].getDomain(i,j) + " ";
+                    seq += output[i].getDomain(-1,j) + " ";
                 for(int j=0;j<7;j++)
                     seq += gate.getDomain(-1,j) + " ";
 
@@ -894,8 +894,149 @@ typedef class BI_INPUT : public DNAMotif {
             cerr << "exiting lInputGate function" << endl;
             return ret;
         }
-        //vector<string> rInputGateNupackComplex(vector<STRAND> output, STRAND gate);
-        //vector<string> bothInputGateNupackComplex(vector<STRAND> output, STRAND gate);
+
+        vector<string> rInputGateNupackComplex(int bit2, vector<STRAND> &output, STRAND &gate){
+            int count = output.size();
+            ostringstream oss1;
+            string seq,subname;
+            int len1, len2, numDomains;
+            vector<string> ret;
+            cerr << "in rInputGate function, count=" << count << endl;
+            for(int i=0;i<count;i++){
+                //bind output[i] and the gate strand together.
+                numDomains = output[i].getNumberOfDomains();
+                if(numDomains != 5)
+                    throw "Incorrect number of domains in right output strand";
+
+                len1 = 0;
+                for(int j=1;j<4;j++){
+                    len1 += output[i].getDomainLength(j);
+                }
+
+                numDomains = gate.getNumberOfDomains();
+                if(numDomains != 7)
+                    throw "Incorrect number of domains in gate";
+
+                len2 = 0;
+                for(int j=3;j<7;j++){
+                    len2 += gate.getDomainLength(j);
+                }
+
+                subname = "_YG";
+                if(count > 1){
+                    subname += "_a";
+                    subname[subname.length()-1]+=i;
+                }
+
+                oss1 << "structure "
+                    << getDSDName(bit2)
+                    << subname << " = U"
+                    << output[i].getDomainLength(0)
+                    << " D"
+                    << len1
+                    << " (U"
+                    << output[i].getDomainLength(4)
+                    << " +) U"
+                    << len2
+                    << endl;
+
+                seq.clear();
+                for(int j=0;j<5;j++)
+                    seq += output[i].getDomain(-1,j) + " ";
+                for(int j=0;j<7;j++)
+                    seq += gate.getDomain(-1,j) + " ";
+
+                oss1 << getDSDName(bit2)
+                    << subname << ".seq = "
+                    << seq
+                    << endl;
+                ret.push_back(oss1.str());
+            }
+            cout << oss1.str() << endl;
+            cerr << "exiting rInputGate function" << endl;
+            return ret;
+        }
+
+        vector<string> bothInputGateNupackComplex(int bit2, vector<STRAND> &loutput, vector<STRAND> routput, STRAND &gate){
+            int lcount = loutput.size();
+            int rcount = routput.size();
+            ostringstream oss1;
+            string seq,subname;
+            int len1, len2, lnumDomains, rnumDomains;
+            vector<string> ret;
+            cerr << "in bothInputGate function, lcount=" 
+                << lcount 
+                << ", rcount = " << rcount
+                << endl;
+            for(int i=0;i<lcount;i++){
+            for(int k=0;k<rcount;k++){
+                //bind output[i] and the gate strand together.
+                lnumDomains = loutput[i].getNumberOfDomains();
+                if(lnumDomains != 5)
+                    throw "Incorrect number of domains in both output strand (left)";
+
+                len1 = 0;
+                for(int j=1;j<4;j++){
+                    len1 += loutput[i].getDomainLength(j);
+                }
+
+                rnumDomains = routput[k].getNumberOfDomains();
+                if(rnumDomains != 5)
+                    throw "Incorrect number of domains in both output strand (right)";
+
+                if(gate.getNumberOfDomains() != 7)
+                    throw "Incorrect number of domains in both output strand (gate)";
+                len2 = 0;
+                for(int j=1;j<4;j++){
+                    len2 += routput[k].getDomainLength(j);
+                }
+
+                subname = "_XYG";
+                if(lcount > 1 || rcount > 1){
+                    subname += "_aa";
+                    subname[subname.length()-2]+=i;
+                    subname[subname.length()-1]+=k;
+                }
+
+                oss1 << "structure "
+                    << getDSDName(bit2)
+                    << subname << " = U"
+                    << loutput[i].getDomainLength(0)
+                    << " D"
+                    << len1
+                    << " (U"
+                    << loutput[i].getDomainLength(4)
+                    << " + U"
+                    << routput[k].getDomainLength(0)
+                    << " D"
+                    << len2
+                    << " (U"
+                    << routput[k].getDomainLength(4)
+                    << "+) U"
+                    << gate.getDomainLength(3)
+                    << ")"
+                    << endl;
+
+                seq.clear();
+                for(int j=0;j<5;j++)
+                    seq += loutput[i].getDomain(-1,j) + " ";
+                for(int j=0;j<5;j++)
+                    seq += routput[k].getDomain(-1,j) + " ";
+                for(int j=0;j<7;j++)
+                    seq += gate.getDomain(-1,j) + " ";
+
+                oss1 << getDSDName(bit2)
+                    << subname << ".seq = "
+                    << seq
+                    << endl;
+                ret.push_back(oss1.str());
+            }
+            }
+            cout << oss1.str() << endl;
+            cerr << "exiting bothInputGate function" << endl;
+            return ret;
+        }
+
         vector<string> printNupackStructureAndSequence(
                 map<int, DNAMotif*> &m, 
                 map<int, int> &names,
@@ -939,6 +1080,8 @@ typedef class BI_INPUT : public DNAMotif {
                 rOutputStrands = m[rInput]->getOutputStrandList(rbit);
 
                 lInputGateNupackComplex(bit2, lOutputStrands, *gateStrand[bit2]);
+                rInputGateNupackComplex(bit2, rOutputStrands, *gateStrand[bit2]);
+                bothInputGateNupackComplex(bit2, lOutputStrands, rOutputStrands, *gateStrand[bit2]);
                 cerr << "passed the output strand " << bit2 << endl;
 
                 //now, associate the left output strands with the current gate 
