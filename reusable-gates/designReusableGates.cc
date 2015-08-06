@@ -1037,13 +1037,68 @@ typedef class BI_INPUT : public DNAMotif {
             return ret;
         }
 
+        vector<string> outputGateNupackComplex(int bit2, vector<STRAND> &output, STRAND &gate){
+            int count = output.size();
+            ostringstream oss1;
+            string seq,subname;
+            int len1, numDomains;
+            vector<string> ret;
+            cerr << "in outputGate function, count=" << count << endl;
+            for(int i=0;i<count;i++){
+                //bind output[i] and the gate strand together.
+                numDomains = output[i].getNumberOfDomains();
+                if(numDomains != 5)
+                    throw "Incorrect number of domains in left output strand";
+
+                len1 = 0;
+                for(int j=0;j<5;j++){
+                    len1 += output[i].getDomainLength(j);
+                }
+
+                numDomains = gate.getNumberOfDomains();
+                if(numDomains != 7)
+                    throw "Incorrect number of domains in gate";
+
+                subname = "_ZG";
+                if(count > 1){
+                    subname += "_a";
+                    subname[subname.length()-1]+=i;
+                }
+
+                oss1 << "structure "
+                    << getDSDName(bit2)
+                    << subname << " = D"
+                    << len1
+                    << " (+U"
+                    << gate.getDomainLength(0)
+                    << ") U"
+                    << gate.getDomainLength(6)
+                    << endl;
+
+                seq.clear();
+                for(int j=0;j<5;j++)
+                    seq += output[i].getDomain(-1,j) + " ";
+                for(int j=0;j<7;j++)
+                    seq += gate.getDomain(-1,j) + " ";
+
+                oss1 << getDSDName(bit2)
+                    << subname << ".seq = "
+                    << seq
+                    << endl;
+                ret.push_back(oss1.str());
+            }
+            cout << oss1.str() << endl;
+            cerr << "exiting outputGate function" << endl;
+            return ret;
+        }
+
         vector<string> printNupackStructureAndSequence(
                 map<int, DNAMotif*> &m, 
                 map<int, int> &names,
                 vector<vector<int> >&g){
             vector<string> ret;
-            ostringstream oss1;
-            string seq;
+            //ostringstream oss1;
+            //string seq;
             int numDomains;
             int len;
 
@@ -1082,11 +1137,15 @@ typedef class BI_INPUT : public DNAMotif {
                 lInputGateNupackComplex(bit2, lOutputStrands, *gateStrand[bit2]);
                 rInputGateNupackComplex(bit2, rOutputStrands, *gateStrand[bit2]);
                 bothInputGateNupackComplex(bit2, lOutputStrands, rOutputStrands, *gateStrand[bit2]);
+                vector<STRAND> outputStrs;
+                outputStrs.push_back(*andStrand[bit2]);
+                outputGateNupackComplex(bit2, outputStrs, *gateStrand[bit2]);
                 cerr << "passed the output strand " << bit2 << endl;
 
                 //now, associate the left output strands with the current gate 
                 //strand, and the right output strands with the current gate 
                 //strand, and then a combination of both.
+                /*
                 numDomains = andStrand[bit2]->getNumberOfDomains();
                 cerr << "passed the 2 output strand " << bit2 << endl;
                 len = 0;
@@ -1118,8 +1177,9 @@ typedef class BI_INPUT : public DNAMotif {
                     << endl;
                 ret.push_back(oss1.str());
                 seq.clear();
+                */
             }
-            cout << oss1.str() << endl;
+            //cout << oss1.str() << endl;
             return ret;
         }
 
@@ -1502,7 +1562,6 @@ void printForNupackDesign(int &n,
 
     //Get Domains
     for(int i=0;i<n;i++){
-        if (i == 0 || i == 7) continue;
         currDomains = m[i]->getUniqueDomains();
         for(it = currDomains.begin(); it!=currDomains.end(); it++)
             allDomains.insert(*it);
