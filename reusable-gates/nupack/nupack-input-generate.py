@@ -1,7 +1,7 @@
 import re, string, sys
 import subprocess
 import datetime
-from bs4 import BeautifulSoup
+#from bs4 import BeautifulSoup
 import requests
 
 
@@ -335,61 +335,118 @@ def createInputFromCurlToNupack(fname):
     #sleep for 10 seconds.
 #end createInputFromCurlToNupack()
 
-    def sieveEachStrand(num):
-        global inputStrands
-        global nameMap
-        global checkMap
-        actualNum = 0
-        for whichInput in range(num):
-            #check if all domains match required criteria.
-            self.strand['X'] = inputStrands[whichInput]['X']
-            self.strand['Y'] = inputStrands[whichInput]['Y']
-            self.strand['G'] = inputStrands[whichInput]['G']
-            self.strand['Z'] = inputStrands[whichInput]['Z']
-            energies = self.calculateDomainFreeEnergies(str(whichInput))
-            print "Input: ", whichInput, " energies: ", energies
-            if energies[3] != 7:
-                print "This input, ", whichInput, ", does not work: ", energies[3], "\n"
-                #continue
+def sieveEachStrand(num, fenergy):
+    global inputStrands
+    global nameMap
+    global checkMap
+    global domainEnergyMap
 
+    reOutput = '_Z$'
+    reGate = '_G$'
+    reNotGate = '_NG$'
+    reStrandisOutput = re.compile(reOutput)
+    reStrandisGate = re.compile(reGate)
+    reStrandisNOTGate = re.compile(reNotGate)
 
-            print "This input, ", whichInput, ", Works!\n"
+    for i in range(num):
+       #check if all domains match required criteria.
+       for key in inputStrands[i]:
+          print "current key:", key
+          if(reStrandisOutput.search(key)):
+             print "matched output"
+             storeDomainFreeEnergy(inputStrands[i][key], 5, fenergy)
+          if(reStrandisGate.search(key)):
+             print "matched gate"
+             storeDomainFreeEnergy(inputStrands[i][key], 7, fenergy)
+          if(reStrandisNOTGate.search(key)):
+             print "matched not gate"
+             storeDomainFreeEnergy(inputStrands[i][key], 4, fenergy)
 
-            for i in range(len(checkMap)):
-                w = checkMap[i].split(',')
-                fname = DIR + str(actualNum) + '_' + w[0] + '_' + w[1]
+       #endfor
+    #endfor
+#end sieveEachStrand
 
-                f = open(fname+'.in','w')
-                f.write('2\n')
-                f.write(inputStrands[whichInput][w[0]]+'\n');
-                f.write(inputStrands[whichInput][w[1]]+'\n');
-                f.write('1 2\n')
-                f.close()
-                runMfe(fname)
-                #subprocess.call(['mfe', '-T', '25', '-material', 'dna', '-multi', '-dangles', 'all', '-sodium', '0.05', '-magnesium', '0.0125', fname])
+def storeDomainFreeEnergy(strand, domains, fenergy):
+   global domainEnergyMap
+   domainLength = len(strand)/domains
+   for i in range(domains):
+      singleDomain = strand[i*domainLength:(i+1)*domainLength]
+      calcAndStoreDomainEnergy(singleDomain, fenergy)
+   #endfor
+#end storeDomainFreeEnergy
 
-            actualNum += 1
+#bound the domain by two pre-defined domains, and
+#calculate the difference in free energies, and write
+#this into the file
+#calculate energy and write into fenergy file
+def calcAndStoreDomainEnergy(singleDomain, fenergy):
 
-        return actualNum
+    if singleDomain in domainEnergyMap:
+       return
+
+    now = datetime.datetime.now()
+    #create a file with input strands
+    when = now.strftime('%b%d_%H%M')
+    fname = DIR + singleDomain + '_' + when
+
+    strand1 = PREFIX + singleDomain + SUFFIX
+    strand2 = reverseComplement(strand1)
+    both = [strand1,strand2]
+    duplexMfe = computeMfe(both, strand1)
+
+    energy = duplexMfe - computeMfe(BasicStrandList, BasicStrandName)
+
+    f = open(fenergy,'a')
+    f.write(singleDomain+':'+str(energy)+'\n');
+    f.close()
+
+    domainEnergyMap[singleDomain] = energy
+#end calcAndStoreDomainEnergy
+
+def createPairedInput(num):
+   global inputStrands
+   global nameMap
+   global checkMap
+   actualNum = 0
+   for whichInput in range(num):
+      for i in range(len(checkMap)):
+         w = checkMap[i].split(',')
+         fname = DIR + str(actualNum) + '_' + w[0] + '_' + w[1]
+
+         f = open(fname+'.in','w')
+         f.write('2\n')
+         f.write(inputStrands[whichInput][w[0]]+'\n');
+         f.write(inputStrands[whichInput][w[1]]+'\n');
+         f.write('1 2\n')
+         f.close()
+         runMfe(fname)
+   actualNum += 1
+   return actualNum
 
 def main():
-    print sys.argv[2]
-    readMappingFile(sys.argv[2]);
+    if(len(sys.argv) != 4):
+       print "Usage: python filename.py sequence.np xor.map domainEnergy.txt"
+       return
+    readMappingFiles(sys.argv[2], sys.argv[3]);
+    print "mapping files read"
     num = createInputFromNupackDesign(sys.argv[1])
     print "Number of Inputs: " + str(num)
     s = Strands()
     #print s.getStrand('MB')
-    #newNum = s.sieveBadInput(num)
-    ret = s.checkOutput(newNum)
-    for i in range(newNum):
+    sieveEachStrand(num, sys.argv[3])
+    print "sieving strands done"
+    createPairedInput(num)
+    ret = s.checkOutput(num)
+    for i in range(num):
         print i, ret[i]
 
 #end main()
 
-def readMappingFile(fname):
+def readMappingFiles(fmap, fenergy):
     global nameMap
     global checkMap
-    f = open(fname,'r')
+    global domainEnergyMap
+    f = open(fmap,'r')
 
     emptyline = '^[ \t]*$'
     reEmpty = re.compile(emptyline)
@@ -403,7 +460,7 @@ def readMappingFile(fname):
         if(reEmpty.match(line)):
             continue
 
-        if(reCheckPattern.match(line)):
+        if(reCheckPattern.search(line)):
             flag = 1
             continue
 
@@ -416,13 +473,26 @@ def readMappingFile(fname):
 
     f.close()
 
-#end readMappingFile
+    f = open(fenergy, 'r')
+    for line in f:
+        if(reEmpty.match(line)):
+            continue
+        w = line.split(':')
+        domainEnergyMap[w[0]] = float(w[1])
+
+    f.close()
+
+#end readMappingFiles
 
 #GlOBAL Declarations here
 nameMap = dict()
 checkMap = dict()
 energyMap = dict()
-
+domainEnergyMap = dict()
+PREFIX='CATCGATCGATCG'
+SUFFIX='CATCGATCGATCGATCG'
+BasicStrandName=PREFIX+SUFFIX
+BasicStrandList=[BasicStrandName,reverseComplement(BasicStrandName)]
 DIR='runs/'
 
 inputStrands = [0 for i in range(100)]
