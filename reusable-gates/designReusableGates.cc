@@ -1632,6 +1632,8 @@ int main(int argc, char *argv[])
             fanOut[i] = 0;
 
         //Construction of DNA Domains
+        //input[0] refers to left input, and 
+        //input[1] refers to right input.
         DNAMotif *input[2];
         for(int i=0;i<n;i++){
             //cout << "starting with vertex: " << sorted[i] << endl;
@@ -1640,10 +1642,16 @@ int main(int argc, char *argv[])
             input[0] = input[1] = NULL;
             index[0] = index[1] = -1;
             for(int j=0;j<n;j++){
-                if(g[j][sorted[i]] != 0){
-                    //cout << "trying: " << j << "," << sorted[i] << ":" << g[j][sorted[i]] << endl;
-                    input[ct] = m[j];
-                    index[ct] = j;
+                //Getting the two gates that input into gate j.
+                if(g[j][sorted[i]] == 1){
+                    input[0] = m[j];
+                    index[0] = j;
+                    ct++;
+                    fanOut[j]++;
+                }
+                else if(g[j][sorted[i]] == 2){
+                    input[1] = m[j];
+                    index[1] = j;
                     ct++;
                     fanOut[j]++;
                 }
@@ -1658,6 +1666,12 @@ int main(int argc, char *argv[])
                 }
             }
             else if (ct == 1){
+                //copy over values into index[0]
+                if(index[0] == -1){
+                    index[0] = index[1];
+                    input[0] = input[1];
+                }
+
                 if(!DNA::fanOutEnabled)
                     m[sorted[i]]->constructFromInput(input[0], input[0]);
                 else{
