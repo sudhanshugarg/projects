@@ -1,6 +1,8 @@
 import re, string, sys
 import subprocess
 import datetime
+from bs4 import BeautifulSoup
+import requests
 
 
 def runMfe(which):
@@ -103,13 +105,13 @@ class Strands(object):
             print "Input: ", whichInput, " energies: ", energies
             if energies[3] != 7:
                 print "This input, ", whichInput, ", does not work: ", energies[3], "\n"
-                continue
+                #continue
 
 
             print "This input, ", whichInput, ", Works!\n"
 
             for i in range(len(checkMap)):
-                w = checkMap[i].split()
+                w = checkMap[i].split(',')
                 fname = DIR + str(actualNum) + '_' + w[0] + '_' + w[1]
 
                 f = open(fname+'.in','w')
@@ -137,7 +139,7 @@ class Strands(object):
         for whichInput in range(num):
             ret.append(0)
             for i in range(len(checkMap)):
-                w = checkMap[i].split()
+                w = checkMap[i].split(',')
                 fname = DIR + str(whichInput) + '_' + w[0] + '_' + w[1] + '.mfe'
 
                 flag = 0
@@ -177,26 +179,41 @@ class Strands(object):
 
         ldomain = len(self.strand['X'])/5
         Xl = self.strand['X'][:ldomain*3]
+        Xl4 = self.strand['X'][:ldomain*4]
         Xr = self.strand['X'][ldomain*2:]
+        Xr4 = self.strand['X'][ldomain:]
 
         seqXlG = [Xl, self.strand['G']]
         seqXrG = [Xr, self.strand['G']]
+        seqXl4Xl4 = [Xl4, reverseComplement(Xl4)]
+        seqXr4Xr4 = [Xr4, reverseComplement(Xr4)]
+        seqXX = [self.strand['X'], reverseComplement(self.strand['X'])]
 
         #hash the info.
+        strandX[0] = round(computeMfe(seqXX, 'XX'+inputName) - computeMfe(seqXr4Xr4, 'Xr4'+inputName),2);
         strandX[1] = round(computeMfe(seqXG, 'XG'+inputName) - computeMfe(seqXrG, 'XrG'+inputName),2);
         strandX[3] = round(computeMfe(seqXG, 'XG'+inputName) - computeMfe(seqXlG, 'XlG'+inputName),2);
+        strandX[4] = round(computeMfe(seqXX, 'XX'+inputName) - computeMfe(seqXl4Xl4, 'Xl4'+inputName),2);
 
         #using complex Y+G, and breaking up Y into 2 strands.
         seqYG = [self.strand['Y'], self.strand['G']]
 
         Yl = self.strand['Y'][:ldomain*3]
+        Yl4 = self.strand['Y'][:ldomain*4]
         Yr = self.strand['Y'][ldomain*2:]
+        Yr4 = self.strand['Y'][ldomain:]
 
         seqYlG = [Yl, self.strand['G']]
         seqYrG = [Yr, self.strand['G']]
+        seqYl4Yl4 = [Yl4, reverseComplement(Yl4)]
+        seqYr4Yr4 = [Yr4, reverseComplement(Yr4)]
+        seqYY = [self.strand['Y'], reverseComplement(self.strand['Y'])]
 
+        #hash the info.
+        strandY[0] = round(computeMfe(seqYY, 'YY'+inputName) - computeMfe(seqYr4Yr4, 'Yr4'+inputName),2);
         strandY[1] = round(computeMfe(seqYG, 'YG'+inputName) - computeMfe(seqYrG, 'YrG'+inputName),2);
         strandY[3] = round(computeMfe(seqYG, 'YG'+inputName) - computeMfe(seqYlG, 'YlG'+inputName),2);
+        strandY[4] = round(computeMfe(seqYY, 'YY'+inputName) - computeMfe(seqYl4Yl4, 'Yl4'+inputName),2);
 
         #using complex Z+G, and breaking up Z into 2 strands.
         seqZG = [self.strand['Z'], self.strand['G']]
@@ -268,9 +285,60 @@ def createInputFromNupackDesign(fname):
             inputStrands[input_num][nameMap[words[0]]] = words[1]
     f.close()
     return input_num+1
+#end createInputFromNupackDesign()
+
+def createInputFromCurlToNupack(fname):
+    '''
+    #read nupack script from this file.
+    with open (fname, 'r') as content_file:
+        design = content_file.read()
+    '''
+
+    multipart = {
+                'design_job[target_structure]': open(fname,'rb')
+            }
+    payload = {
+            'preview_token' : '',
+            'design_job[nucleic_acid_type]' : 'DNA',
+            'design_job[temperature]' : '25.0',
+            'design_job[number_of_trials]' : '10',
+            'design_job[rna_parameter_file]' : 'rna1995',
+            'design_job[dna_parameter_file]' : 'dna1998',
+            'design_job[dangle_level]' : '2',
+            'design_job[na_salt]' : '0.5',
+            'design_job[mg_salt]' : '0.0125',
+            'design_job[dotplot_target]' : '0',
+            'design_job[prevented_strings]' : 'SSSS\nAAAAA\nAAAA\nGGG',
+            'design_job[email_address]' : 'sgarg@cs.duke.edu',
+            'commit' : 'Design'
+    }
+    hdrs = {
+            '''
+            'Cache-Control':'max-age=0',
+            'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Origin':'null',
+            'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36',
+            'Content-Type':'multipart/form-data; boundary=----WebKitFormBoundaryRvFIpcbpreh4yDoF',
+            'DNT':'1',
+            'Accept-Encoding':'gzip, deflate',
+            'Accept-Language':'en-US,en;q=0.8',
+            '''
+    }
+    submit_page1 = 'http://www.nupack.org/design/new'
+    rd = requests.post(submit_page1, data=payload, headers=hdrs, files=multipart)
+    print rd.text.encode('utf-8')
+
+    #extract the return url from this return data.
+
+    #keep trying the return url until the design is complete.
+    flag = 1
+    #sleep for 10 seconds.
+#end createInputFromCurlToNupack()
 
 def main():
-    num = createInputFromNupackDesign('nd')
+    print sys.argv[2]
+    readMappingFile(sys.argv[2]);
+    num = createInputFromNupackDesign(sys.argv[1])
     print "Number of Inputs: " + str(num)
     s = Strands()
     #print s.getStrand('MB')
@@ -279,28 +347,43 @@ def main():
     for i in range(newNum):
         print i, ret[i]
 
+#end main()
+
+def readMappingFile(fname):
+    global nameMap
+    global checkMap
+    f = open(fname,'r')
+
+    emptyline = '^[ \t]*$'
+    reEmpty = re.compile(emptyline)
+
+    checkPattern = '%checkMapPattern_Here%'
+    reCheckPattern = re.compile(checkPattern)
+    flag = 0
+    count = 0
+
+    for line in f:
+        if(reEmpty.match(line)):
+            continue
+
+        if(reCheckPattern.match(line)):
+            flag = 1
+            continue
+
+        w = line.split()
+        if (flag == 0):
+            nameMap[w[0]] = w[1]
+        else:
+            checkMap[count] = w[0]
+            count += 1
+
+    f.close()
+
+#end readMappingFile
+
 #GlOBAL Declarations here
 nameMap = dict()
-nameMap['T5_X_strand'] = 'X'
-nameMap['T5_Y_strand'] = 'Y'
-nameMap['T5_Z_strand'] = 'Z'
-nameMap['T5_G_strand'] = 'G'
-nameMap['T5_GX_strand'] = 'GX'
-nameMap['T5_GY_strand'] = 'GY'
-nameMap['MB_strand'] = 'MB'
-
 checkMap = dict()
-checkMap[0] = 'MB X'
-checkMap[1] = 'MB Y'
-checkMap[2] = 'MB Z'
-checkMap[3] = 'MB G'
-checkMap[4] = 'MB GX'
-checkMap[5] = 'MB GY'
-checkMap[6] = 'Z X'
-checkMap[7] = 'Z Y'
-checkMap[8] = 'Z GX'
-checkMap[9] = 'Z GY'
-
 energyMap = dict()
 
 DIR='runs/'

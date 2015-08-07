@@ -1,0 +1,18 @@
+T5_X_strand X
+T5_Y_strand Y
+T5_Z_strand Z
+T5_G_strand G
+T5_GX_strand GX
+T5_GY_strand GY
+MB_strand MB
+%checkMapPattern_Here%
+MB,X
+MB,Y
+MB,Z
+MB,G
+MB,GX
+MB,GY
+Z,X
+Z,Y
+Z,GX
+Z,GY

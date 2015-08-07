@@ -1,0 +1,75 @@
+OR_D_3_ZG_strand2 D11_G
+
+OR_D_3_ZG_strand1 D11_Z
+
+OR_D_3_XYG_strand2 C11_Z
+
+OR_D_3_XYG_strand1 B11_Z
+
+OR_D_2_ZG_strand1 D10_Z
+
+OR_D_2_YG_c_strand1 C10_Z
+
+OR_D_2_YG_a_strand2 D10_G
+
+OR_D_1_ZG_strand1 D01_Z
+
+OR_D_1_XYG_aa_strand1 B00_Z
+
+OR_D_1_XG_a_strand2 D01_G
+
+OR_D_0_ZG_strand1 D00_Z
+
+OR_D_0_YG_b_strand2 D00_G
+
+OR_D_0_YG_b_strand1 C01_Z
+
+OR_D_0_XYG_ca_strand2 C00_Z
+
+OR_D_0_XYG_ca_strand1 B10_Z
+
+OR_D_0_XYG_bb_strand1 B01_Z
+
+NOT_F_1_strand2 F1_NG
+
+NOT_F_0_strand2 F0_NG
+
+NOT_E_1_strand2 E1_NG
+
+NOT_E_0_strand2 E0_NG
+
+MB_strand MB
+
+BIT_G_1_strand G1
+
+BIT_G_0_strand G0
+
+BIT_A_1_strand A1
+
+BIT_A_0_strand A0
+
+AND_C_3_YG_strand1 F1_Z
+
+AND_C_3_XG_strand2 C11_G
+
+AND_C_2_YG_strand2 C10_G
+
+AND_C_1_XG_strand2 C01_G
+
+AND_C_0_YG_strand2 C00_G
+
+AND_C_0_YG_strand1 F0_Z
+
+AND_B_3_YG_strand2 B11_G
+
+AND_B_3_XG_strand1 E1_Z
+
+AND_B_2_XG_strand2 B10_G
+
+AND_B_1_YG_strand2 B01_G
+
+AND_B_0_XG_strand2 B00_G
+
+AND_B_0_XG_strand1 E0_Z
+%checkMapPattern_Here%
+MB,D11_Z
