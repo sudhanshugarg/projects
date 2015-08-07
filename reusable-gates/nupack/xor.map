@@ -40,13 +40,13 @@ NOT_E_0_strand2 E0_NG
 
 MB_strand MB
 
-BIT_G_1_strand G1
+BIT_G_1_strand G1_Z
 
-BIT_G_0_strand G0
+BIT_G_0_strand G0_Z
 
-BIT_A_1_strand A1
+BIT_A_1_strand A1_Z
 
-BIT_A_0_strand A0
+BIT_A_0_strand A0_Z
 
 AND_C_3_YG_strand1 F1_Z
 

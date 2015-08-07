@@ -335,6 +335,43 @@ def createInputFromCurlToNupack(fname):
     #sleep for 10 seconds.
 #end createInputFromCurlToNupack()
 
+    def sieveEachStrand(num):
+        global inputStrands
+        global nameMap
+        global checkMap
+        actualNum = 0
+        for whichInput in range(num):
+            #check if all domains match required criteria.
+            self.strand['X'] = inputStrands[whichInput]['X']
+            self.strand['Y'] = inputStrands[whichInput]['Y']
+            self.strand['G'] = inputStrands[whichInput]['G']
+            self.strand['Z'] = inputStrands[whichInput]['Z']
+            energies = self.calculateDomainFreeEnergies(str(whichInput))
+            print "Input: ", whichInput, " energies: ", energies
+            if energies[3] != 7:
+                print "This input, ", whichInput, ", does not work: ", energies[3], "\n"
+                #continue
+
+
+            print "This input, ", whichInput, ", Works!\n"
+
+            for i in range(len(checkMap)):
+                w = checkMap[i].split(',')
+                fname = DIR + str(actualNum) + '_' + w[0] + '_' + w[1]
+
+                f = open(fname+'.in','w')
+                f.write('2\n')
+                f.write(inputStrands[whichInput][w[0]]+'\n');
+                f.write(inputStrands[whichInput][w[1]]+'\n');
+                f.write('1 2\n')
+                f.close()
+                runMfe(fname)
+                #subprocess.call(['mfe', '-T', '25', '-material', 'dna', '-multi', '-dangles', 'all', '-sodium', '0.05', '-magnesium', '0.0125', fname])
+
+            actualNum += 1
+
+        return actualNum
+
 def main():
     print sys.argv[2]
     readMappingFile(sys.argv[2]);
@@ -342,7 +379,7 @@ def main():
     print "Number of Inputs: " + str(num)
     s = Strands()
     #print s.getStrand('MB')
-    newNum = s.sieveBadInput(num)
+    #newNum = s.sieveBadInput(num)
     ret = s.checkOutput(newNum)
     for i in range(newNum):
         print i, ret[i]
