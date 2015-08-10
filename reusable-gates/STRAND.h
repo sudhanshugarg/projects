@@ -86,7 +86,7 @@ typedef class DNAMotif{
         virtual void constructFromInput(DNAMotif *I1, DNAMotif *I2, int f1=0, int f2=0);
         virtual string getDomain(int bit, int idx, TOEHOLD_TYPE type = NORMAL);
         virtual string getComplementDomain(int bit, int idx);
-        virtual vector<STRAND> getStrands(void);
+        virtual vector<STRAND> getStrands(int bit=-1);
         virtual set<string> getUniqueDomains(void);
         virtual vector<string> printNupackStructureAndSequence(
                 map<int, DNAMotif*> &m, 
@@ -121,11 +121,12 @@ typedef class STRAND : public DNAMotif{
         void push(string s);
         static string getNewDomain(string prefix = DOMAINPREFIX);
         bool compareDomains(STRAND to);
-        vector<STRAND> getStrands(void);
+        vector<STRAND> getStrands(int bit=-1);
         string getID(void);
         int getNumberOfDomains(void);
         set<string> getUniqueDomains(void);
         int getDomainLength(int pos=0);
+        string getName(void);
 
     private:
         vector<string> name;

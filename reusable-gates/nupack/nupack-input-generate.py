@@ -17,7 +17,7 @@ def computeMfe(strandList, name):
 
     now = datetime.datetime.now()
     #create a file with input strands
-    when = now.strftime('%b%d_%H%M')
+    when = now.strftime('%b%d_%H%M%S')
     fname = DIR + name + '_' + when
 
     f = open(fname+'.in','w')
@@ -351,15 +351,15 @@ def sieveEachStrand(num, fenergy):
     for i in range(num):
        #check if all domains match required criteria.
        for key in inputStrands[i]:
-          print "current key:", key
+          #print "current key:", key
           if(reStrandisOutput.search(key)):
-             print "matched output"
+             #print "matched output"
              storeDomainFreeEnergy(inputStrands[i][key], 5, fenergy)
           if(reStrandisGate.search(key)):
-             print "matched gate"
+             #print "matched gate"
              storeDomainFreeEnergy(inputStrands[i][key], 7, fenergy)
           if(reStrandisNOTGate.search(key)):
-             print "matched not gate"
+             #print "matched not gate"
              storeDomainFreeEnergy(inputStrands[i][key], 4, fenergy)
 
        #endfor
@@ -386,7 +386,7 @@ def calcAndStoreDomainEnergy(singleDomain, fenergy):
 
     now = datetime.datetime.now()
     #create a file with input strands
-    when = now.strftime('%b%d_%H%M')
+    when = now.strftime('%b%d_%H%M%S')
     fname = DIR + singleDomain + '_' + when
 
     strand1 = PREFIX + singleDomain + SUFFIX
@@ -422,6 +422,35 @@ def createPairedInput(num):
          runMfe(fname)
    actualNum += 1
    return actualNum
+#end createPairedInput
+
+
+def createCheckMap(num):
+   global inputStrands
+   global nameMap
+   global checkMap
+
+   checkMap2 = dict()
+
+
+
+
+   actualNum = 0
+   for whichInput in range(num):
+      for i in range(len(checkMap)):
+         w = checkMap[i].split(',')
+         fname = DIR + str(actualNum) + '_' + w[0] + '_' + w[1]
+
+         f = open(fname+'.in','w')
+         f.write('2\n')
+         f.write(inputStrands[whichInput][w[0]]+'\n');
+         f.write(inputStrands[whichInput][w[1]]+'\n');
+         f.write('1 2\n')
+         f.close()
+         runMfe(fname)
+   actualNum += 1
+   return actualNum
+#end createCheckMap
 
 def main():
     if(len(sys.argv) != 4):
@@ -435,6 +464,7 @@ def main():
     #print s.getStrand('MB')
     sieveEachStrand(num, sys.argv[3])
     print "sieving strands done"
+    createCheckMap()
     createPairedInput(num)
     ret = s.checkOutput(num)
     for i in range(num):

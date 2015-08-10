@@ -72,4 +72,13 @@ AND_B_0_XG_strand2 B00_G
 
 AND_B_0_XG_strand1 E0_Z
 %checkMapPattern_Here%
+A0_Z,A1_Z
+A0_Z,B01_Z
+A0_Z,B01_G
+A0_Z,B11_Z
+A0_Z,B11_G
+A1_Z,B00_Z
+A1_Z,B00_G
+A1_Z,B10_Z
+A1_Z,B10_G
 MB,D11_Z

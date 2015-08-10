@@ -454,11 +454,17 @@ string DNAMotif::getComplementDomain(int bit, int idx){
     cerr << "in the dnamotif getComplementDomain " << endl;
 }
 
-vector<STRAND> DNAMotif::getStrands(void){
+vector<STRAND> DNAMotif::getStrands(int bit){
     vector<STRAND> ret;
-    for(int i=0;i<4;i++){
-        ret.push_back(*andStrand[i]);
-        ret.push_back(*gateStrand[i]);
+    if(bit == -1){
+        for(int i=0;i<4;i++){
+            ret.push_back(*andStrand[i]);
+            ret.push_back(*gateStrand[i]);
+        }
+    }
+    else{
+        ret.push_back(*andStrand[bit]);
+        ret.push_back(*gateStrand[bit]);
     }
     return ret;
     cerr << "in the dnamotif getStrands " << endl;
@@ -630,7 +636,7 @@ bool STRAND::compareDomains(STRAND to){
     return false;
 }
 
-vector<STRAND> STRAND::getStrands(void){
+vector<STRAND> STRAND::getStrands(int bit){
     vector<STRAND> ret;
     ret.push_back(*this);
     return ret;
@@ -703,6 +709,9 @@ int STRAND::getDomainLength(int pos){
     return domainSize[pos];
 }
 
+string STRAND::getName(void){
+}
+
 typedef class BIT : public DNAMotif{
     public:
         BIT(){}
@@ -755,10 +764,13 @@ typedef class BIT : public DNAMotif{
             return andStrand[bit]->getComplementDomain(bit, idx);
         }
 
-        vector<STRAND> getStrands(void){
+        vector<STRAND> getStrands(int bit){
             vector<STRAND> ret;
-            for(int i=0;i<2;i++)
-                ret.push_back(*andStrand[i]);
+            if(bit == -1)
+                for(int i=0;i<2;i++)
+                    ret.push_back(*andStrand[i]);
+            else
+                ret.push_back(*andStrand[bit]);
             return ret;
         }
 
@@ -1194,8 +1206,8 @@ typedef class NOT : public DNAMotif {
             id[0][0] += num;
             idNum = num;
             for(int i=0;i<2;i++){
-                andStrand[i] = new STRAND();
-                gateStrand[i] = new STRAND();
+                andStrand[i] = new STRAND(num);
+                gateStrand[i] = new STRAND(num);
             }
         }
 
@@ -1282,11 +1294,16 @@ typedef class NOT : public DNAMotif {
             }
         }
 
-        vector<STRAND> getStrands(void){
+        vector<STRAND> getStrands(int bit){
             vector<STRAND> ret;
-            for(int i=0;i<2;i++){
-                ret.push_back(*andStrand[i]);
-                ret.push_back(*gateStrand[i]);
+            if(bit == -1)
+                for(int i=0;i<2;i++){
+                    ret.push_back(*andStrand[i]);
+                    ret.push_back(*gateStrand[i]);
+                }
+            else{
+                ret.push_back(*andStrand[bit]);
+                ret.push_back(*gateStrand[bit]);
             }
             return ret;
         }
@@ -1580,6 +1597,214 @@ void printForNupackDesign(int &n,
 
 }
 
+bool isBiMotif(MOTIF_TYPE type){
+    switch(type){
+        case NAND_MOTIF:
+        case AND_MOTIF:
+        case OR_MOTIF:
+        case NOR_MOTIF:
+            return true;
+        default:
+            return false;
+    }
+}
+
+void createCheckMapForPythonScript(
+        int &n, 
+        map<int, DNAMotif*> &m, 
+        map<int, int> &names,
+        vector< vector< int> > &g
+        ){
+
+        vector<STRAND> v1, v2;
+        int myct = 0;
+        int it[4];
+        for(int i=0;i<n;i++)
+        for(int j=0;j<n;j++){
+            //if direct edge in or out of gate
+            if(g[i][j] == 1){
+                
+                cerr << "i=" << m[i]->getID() << ",j=" << m[j]->getID() << endl;
+                //left input
+                //need the following functions
+                //getStrandsThatAcceptBit(bit)
+                //getStrandsThatDontAcceptBit(bit)
+                //getStrands()
+                if(m[i]->getType() == BIT_MOTIF and m[j]->getType() == NOT_MOTIF){
+                    v1 = m[i]->getStrands(0);
+                    v2 = m[j]->getStrands(0);
+                    cout << v1[0].getID() << "0_Z," << v2[0].getID() << "0_Z" << endl;
+                    cout << v1[0].getID() << "0_Z," << v2[1].getID() << "0_G" << endl;
+
+                    v1 = m[i]->getStrands(1);
+                    v2 = m[j]->getStrands(1);
+                    cout << v1[0].getID() << "1_Z," << v2[0].getID() << "1_Z" << endl;
+                    cout << v1[0].getID() << "1_Z," << v2[1].getID() << "1_G" << endl;
+                }
+
+                if(m[i]->getType() == BIT_MOTIF and isBiMotif(m[j]->getType())){
+                    v1 = m[i]->getStrands(0);
+                    v2 = m[j]->getStrands(2);
+                    cout << v1[0].getID() << "0_Z," << v2[0].getID() << "2_Z" << endl;
+                    cout << v1[0].getID() << "0_Z," << v2[1].getID() << "2_G" << endl;
+                    v2 = m[j]->getStrands(3);
+                    cout << v1[0].getID() << "0_Z," << v2[0].getID() << "3_Z" << endl;
+                    cout << v1[0].getID() << "0_Z," << v2[1].getID() << "3_G" << endl;
+
+                    v1 = m[i]->getStrands(1);
+                    v2 = m[j]->getStrands(0);
+                    cout << v1[0].getID() << "1_Z," << v2[0].getID() << "0_Z" << endl;
+                    cout << v1[0].getID() << "1_Z," << v2[1].getID() << "0_G" << endl;
+                    v2 = m[j]->getStrands(1);
+                    cout << v1[0].getID() << "1_Z," << v2[0].getID() << "1_Z" << endl;
+                    cout << v1[0].getID() << "1_Z," << v2[1].getID() << "1_G" << endl;
+                }
+
+                if(m[i]->getType() == NOT_MOTIF and m[j]->getType() == NOT_MOTIF){
+                    v1 = m[i]->getStrands(0);
+                    v2 = m[j]->getStrands(0);
+                    string alphabet[2];
+                    alphabet[0] = "Z";
+                    alphabet[1] = "G";
+                    for(int a=0;a<2;a++)
+                        for(int b=0;b<2;b++)
+                            cout << v1[a].getID() << "0_" + alphabet[a] + "," << v2[b].getID() << "0_" + alphabet[b] << endl;
+
+                    v1 = m[i]->getStrands(1);
+                    v2 = m[j]->getStrands(1);
+                    for(int a=0;a<2;a++)
+                        for(int b=0;b<2;b++)
+                            cout << v1[a].getID() << "1_" + alphabet[a] + "," << v2[b].getID() << "1_" + alphabet[b] << endl;
+                }
+                /*
+
+                if(m[i]->getType() == NOT and m[j]->getType() == BI_INPUT){
+                    v1 = m[i]->getStrands(0);
+                    v2 = m[j]->getStrands(2);
+                    cout << v1[0]->getName() << "," << v2[0]->getName();
+                    cout << v1[0]->getName() << "," << v2[1]->getName();
+                    cout << v1[1]->getName() << "," << v2[0]->getName();
+                    cout << v1[1]->getName() << "," << v2[1]->getName();
+
+                    v1 = m[i]->getStrands(0);
+                    v2 = m[j]->getStrands(3);
+                    cout << v1[0]->getName() << "," << v2[0]->getName();
+                    cout << v1[0]->getName() << "," << v2[1]->getName();
+                    cout << v1[1]->getName() << "," << v2[0]->getName();
+                    cout << v1[1]->getName() << "," << v2[1]->getName();
+
+                    v1 = m[i]->getStrands(1);
+                    v2 = m[j]->getStrands(0);
+                    cout << v1[0]->getName() << "," << v2[0]->getName();
+                    cout << v1[0]->getName() << "," << v2[1]->getName();
+                    cout << v1[1]->getName() << "," << v2[0]->getName();
+                    cout << v1[1]->getName() << "," << v2[1]->getName();
+
+                    v1 = m[i]->getStrands(1);
+                    v2 = m[j]->getStrands(1);
+                    cout << v1[0]->getName() << "," << v2[0]->getName();
+                    cout << v1[0]->getName() << "," << v2[1]->getName();
+                    cout << v1[1]->getName() << "," << v2[0]->getName();
+                    cout << v1[1]->getName() << "," << v2[1]->getName();
+                }
+
+                if(m[i]->getType() == BI_INPUT and m[j]->getType() == NOT){
+                    const int *TT_gate;
+                    TT_gate = getTruthTable[m[i]->getType()];
+                    for(int bit2=0;bit2<4;bit2++){
+                        v1 = m[i]->getStrands(bit2);
+                        v2 = m[j]->getStrands(TT_gate[3*bit2+2]);
+                        for (int i=0;i<2;i++)
+                            for(int j=0;j<2;j++)
+                                cout << v1[i]->getName() << "," << v2[j]->getName();
+                    }
+                }
+
+                if(m[i]->getType() == BI_INPUT and m[j]->getType() == BI_INPUT){
+                    const int *TT_gate;
+                    TT_gate = getTruthTable[m[i]->getType()];
+                    for(int bit2=0;bit2<4;bit2++){
+                        v1 = m[i]->getStrands(bit2);
+                        v2 = m[j]->getStrands(!TT_gate[3*bit2+2]);
+                        for (int i=0;i<2;i++)
+                            for(int j=0;j<2;j++)
+                                cout << v1[i]->getName() << "," << v2[j]->getName();
+                    }
+                }
+            }//end if g[i][j] is 1.
+            else if (g[i][j] == 2){
+
+                //right input
+                //need the following functions
+                //getStrandsThatAcceptBit(bit)
+                //getStrandsThatDontAcceptBit(bit)
+                //getStrands()
+
+                if(m[i]->getType() == BIT and m[j]->getType() == BI_INPUT){
+                    v1 = m[i]->getStrands(0);
+                    v2 = m[j]->getStrands(0);
+                    cout << v1[0]->getName() << "," << v2[0]->getName();
+                    cout << v1[0]->getName() << "," << v2[1]->getName();
+                    v2 = m[j]->getStrands(1);
+                    cout << v1[0]->getName() << "," << v2[0]->getName();
+                    cout << v1[0]->getName() << "," << v2[1]->getName();
+
+                    v1 = m[i]->getStrands(1);
+                    v2 = m[j]->getStrands(2);
+                    cout << v1[0]->getName() << "," << v2[0]->getName();
+                    cout << v1[0]->getName() << "," << v2[1]->getName();
+                    v2 = m[j]->getStrands(3);
+                    cout << v1[0]->getName() << "," << v2[0]->getName();
+                    cout << v1[0]->getName() << "," << v2[1]->getName();
+                }
+
+                if(m[i]->getType() == NOT and m[j]->getType() == BI_INPUT){
+                    v1 = m[i]->getStrands(0);
+                    v2 = m[j]->getStrands(0);
+                    cout << v1[0]->getName() << "," << v2[0]->getName();
+                    cout << v1[0]->getName() << "," << v2[1]->getName();
+                    cout << v1[1]->getName() << "," << v2[0]->getName();
+                    cout << v1[1]->getName() << "," << v2[1]->getName();
+
+                    v1 = m[i]->getStrands(0);
+                    v2 = m[j]->getStrands(1);
+                    cout << v1[0]->getName() << "," << v2[0]->getName();
+                    cout << v1[0]->getName() << "," << v2[1]->getName();
+                    cout << v1[1]->getName() << "," << v2[0]->getName();
+                    cout << v1[1]->getName() << "," << v2[1]->getName();
+
+                    v1 = m[i]->getStrands(1);
+                    v2 = m[j]->getStrands(2);
+                    cout << v1[0]->getName() << "," << v2[0]->getName();
+                    cout << v1[0]->getName() << "," << v2[1]->getName();
+                    cout << v1[1]->getName() << "," << v2[0]->getName();
+                    cout << v1[1]->getName() << "," << v2[1]->getName();
+
+                    v1 = m[i]->getStrands(1);
+                    v2 = m[j]->getStrands(3);
+                    cout << v1[0]->getName() << "," << v2[0]->getName();
+                    cout << v1[0]->getName() << "," << v2[1]->getName();
+                    cout << v1[1]->getName() << "," << v2[0]->getName();
+                    cout << v1[1]->getName() << "," << v2[1]->getName();
+                }
+
+                if(m[i]->getType() == BI_INPUT and m[j]->getType() == BI_INPUT){
+                    const int *TT_gate;
+                    TT_gate = getTruthTable[m[i]->getType()];
+                    for(int bit2=0;bit2<4;bit2++){
+                        v1 = m[i]->getStrands(bit2);
+                        v2 = m[j]->getStrands(!TT_gate[3*bit2+2]);
+                        for (int i=0;i<2;i++)
+                            for(int j=0;j<2;j++)
+                                cout << v1[i]->getName() << "," << v2[j]->getName();
+                    }
+                }
+                */
+            }//end if g[i][j] is 2.
+        }//end for loop
+        return;
+}
+
 
 void print_usage(void){
     cout << "Usage: ./a.out -f <enable fanout> -r <enable reusable> [file]"
@@ -1794,6 +2019,8 @@ int main(int argc, char *argv[])
 
         //print for NUPACK
         printForNupackDesign(n,m,names,g);
+
+        createCheckMapForPythonScript(n,m,names,g);
 
         deleteInput(n, m);
     }
