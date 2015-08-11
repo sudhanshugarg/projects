@@ -7,6 +7,7 @@
 #include<fstream>
 #include<unistd.h>
 #include<set>
+#include<cstdlib>
 #include "STRAND.h"
 using namespace std;
 
@@ -1609,6 +1610,22 @@ bool isBiMotif(MOTIF_TYPE type){
     }
 }
 
+string int2string(int n){
+   //ostringstream oss;
+   //oss << n;
+   //return oss.str();
+   //or 
+   return static_cast<ostringstream*>(&(ostringstream() << n))->str();
+}
+
+string int2binaryString(int n){
+   //Assumption, only does numbers from 0-3.
+   ostringstream oss;
+   oss << n/2;
+   oss << n%2;
+   return oss.str();
+}
+
 void createCheckMapForPythonScript(
         int &n, 
         map<int, DNAMotif*> &m, 
@@ -1617,122 +1634,188 @@ void createCheckMapForPythonScript(
         ){
 
         vector<STRAND> v1, v2;
-        int myct = 0;
-        int it[4];
+        string suffix[2];
+        suffix[0] = "Z";
+        suffix[1] = "G";
+        string str_lbits, str_rbits;
+        vector<int>lbits;
+        vector<int>rbits;
+        
         for(int i=0;i<n;i++)
         for(int j=0;j<n;j++){
             //if direct edge in or out of gate
             if(g[i][j] == 1){
                 
-                cerr << "i=" << m[i]->getID() << ",j=" << m[j]->getID() << endl;
+                cout << "i=" << m[i]->getID() << ",j=" << m[j]->getID() << endl;
                 //left input
                 //need the following functions
                 //getStrandsThatAcceptBit(bit)
                 //getStrandsThatDontAcceptBit(bit)
                 //getStrands()
-                if(m[i]->getType() == BIT_MOTIF and m[j]->getType() == NOT_MOTIF){
-                    v1 = m[i]->getStrands(0);
-                    v2 = m[j]->getStrands(0);
-                    cout << v1[0].getID() << "0_Z," << v2[0].getID() << "0_Z" << endl;
-                    cout << v1[0].getID() << "0_Z," << v2[1].getID() << "0_G" << endl;
+                if(m[i]->getType() == BIT_MOTIF and 
+                   m[j]->getType() == NOT_MOTIF){
+                   lbits.clear(); rbits.clear();
+                   lbits.push_back(0);
+                   rbits.push_back(0);
+                   lbits.push_back(1);
+                   rbits.push_back(1);
 
-                    v1 = m[i]->getStrands(1);
-                    v2 = m[j]->getStrands(1);
-                    cout << v1[0].getID() << "1_Z," << v2[0].getID() << "1_Z" << endl;
-                    cout << v1[0].getID() << "1_Z," << v2[1].getID() << "1_G" << endl;
+                   for(int k=0;k<lbits.size();k++){
+                      //reset the string bits.
+                      str_lbits = int2string(lbits[k]);
+                      str_rbits = int2string(rbits[k]);
+
+                      v1 = m[i]->getStrands(lbits[k]);
+                      v2 = m[j]->getStrands(rbits[k]);
+                      for(int a=0;a<2;a++)
+                         cout
+                            << m[i]->getID() << str_lbits + "_" + suffix[0]+ "," 
+                            << m[j]->getID() << str_rbits + "_" + suffix[a] 
+                            << endl;
+                   }
                 }
 
-                if(m[i]->getType() == BIT_MOTIF and isBiMotif(m[j]->getType())){
-                    v1 = m[i]->getStrands(0);
-                    v2 = m[j]->getStrands(2);
-                    cout << v1[0].getID() << "0_Z," << v2[0].getID() << "2_Z" << endl;
-                    cout << v1[0].getID() << "0_Z," << v2[1].getID() << "2_G" << endl;
-                    v2 = m[j]->getStrands(3);
-                    cout << v1[0].getID() << "0_Z," << v2[0].getID() << "3_Z" << endl;
-                    cout << v1[0].getID() << "0_Z," << v2[1].getID() << "3_G" << endl;
+                if(m[i]->getType() == BIT_MOTIF and 
+                   isBiMotif(m[j]->getType())){
+                   lbits.clear(); rbits.clear();
+                   lbits.push_back(0);
+                   rbits.push_back(2);
+                   lbits.push_back(0);
+                   rbits.push_back(3);
+                   lbits.push_back(1);
+                   rbits.push_back(0);
+                   lbits.push_back(1);
+                   rbits.push_back(1);
 
-                    v1 = m[i]->getStrands(1);
-                    v2 = m[j]->getStrands(0);
-                    cout << v1[0].getID() << "1_Z," << v2[0].getID() << "0_Z" << endl;
-                    cout << v1[0].getID() << "1_Z," << v2[1].getID() << "0_G" << endl;
-                    v2 = m[j]->getStrands(1);
-                    cout << v1[0].getID() << "1_Z," << v2[0].getID() << "1_Z" << endl;
-                    cout << v1[0].getID() << "1_Z," << v2[1].getID() << "1_G" << endl;
+                   for(int k=0;k<lbits.size();k++){
+                      //reset the string bits.
+                      str_lbits = int2string(lbits[k]);
+                      str_rbits = int2binaryString(rbits[k]);
+
+                      v1 = m[i]->getStrands(lbits[k]);
+                      v2 = m[j]->getStrands(rbits[k]);
+                      for(int a=0;a<2;a++)
+                         cout
+                            << m[i]->getID() << str_lbits + "_" + suffix[0]+ "," 
+                            << m[j]->getID() << str_rbits + "_" + suffix[a] 
+                            << endl;
+                   }
                 }
 
                 if(m[i]->getType() == NOT_MOTIF and m[j]->getType() == NOT_MOTIF){
-                    v1 = m[i]->getStrands(0);
-                    v2 = m[j]->getStrands(0);
-                    string alphabet[2];
-                    alphabet[0] = "Z";
-                    alphabet[1] = "G";
-                    for(int a=0;a<2;a++)
+                   lbits.clear(); rbits.clear();
+                   lbits.push_back(0);
+                   rbits.push_back(0);
+                   lbits.push_back(1);
+                   rbits.push_back(1);
+
+                   for(int k=0;k<lbits.size();k++){
+                      //reset the string bits.
+                      str_lbits = int2string(lbits[k]);
+                      str_rbits = int2string(rbits[k]);
+
+                      v1 = m[i]->getStrands(lbits[k]);
+                      v2 = m[j]->getStrands(rbits[k]);
+                      for(int a=0;a<2;a++)
                         for(int b=0;b<2;b++)
-                            cout << v1[a].getID() << "0_" + alphabet[a] + "," << v2[b].getID() << "0_" + alphabet[b] << endl;
-
-                    v1 = m[i]->getStrands(1);
-                    v2 = m[j]->getStrands(1);
-                    for(int a=0;a<2;a++)
-                        for(int b=0;b<2;b++)
-                            cout << v1[a].getID() << "1_" + alphabet[a] + "," << v2[b].getID() << "1_" + alphabet[b] << endl;
-                }
-                /*
-
-                if(m[i]->getType() == NOT and m[j]->getType() == BI_INPUT){
-                    v1 = m[i]->getStrands(0);
-                    v2 = m[j]->getStrands(2);
-                    cout << v1[0]->getName() << "," << v2[0]->getName();
-                    cout << v1[0]->getName() << "," << v2[1]->getName();
-                    cout << v1[1]->getName() << "," << v2[0]->getName();
-                    cout << v1[1]->getName() << "," << v2[1]->getName();
-
-                    v1 = m[i]->getStrands(0);
-                    v2 = m[j]->getStrands(3);
-                    cout << v1[0]->getName() << "," << v2[0]->getName();
-                    cout << v1[0]->getName() << "," << v2[1]->getName();
-                    cout << v1[1]->getName() << "," << v2[0]->getName();
-                    cout << v1[1]->getName() << "," << v2[1]->getName();
-
-                    v1 = m[i]->getStrands(1);
-                    v2 = m[j]->getStrands(0);
-                    cout << v1[0]->getName() << "," << v2[0]->getName();
-                    cout << v1[0]->getName() << "," << v2[1]->getName();
-                    cout << v1[1]->getName() << "," << v2[0]->getName();
-                    cout << v1[1]->getName() << "," << v2[1]->getName();
-
-                    v1 = m[i]->getStrands(1);
-                    v2 = m[j]->getStrands(1);
-                    cout << v1[0]->getName() << "," << v2[0]->getName();
-                    cout << v1[0]->getName() << "," << v2[1]->getName();
-                    cout << v1[1]->getName() << "," << v2[0]->getName();
-                    cout << v1[1]->getName() << "," << v2[1]->getName();
+                         cout
+                            << m[i]->getID() << str_lbits + "_" + suffix[a]+ "," 
+                            << m[j]->getID() << str_rbits + "_" + suffix[b] 
+                            << endl;
+                   }
                 }
 
-                if(m[i]->getType() == BI_INPUT and m[j]->getType() == NOT){
-                    const int *TT_gate;
-                    TT_gate = getTruthTable[m[i]->getType()];
-                    for(int bit2=0;bit2<4;bit2++){
-                        v1 = m[i]->getStrands(bit2);
-                        v2 = m[j]->getStrands(TT_gate[3*bit2+2]);
-                        for (int i=0;i<2;i++)
-                            for(int j=0;j<2;j++)
-                                cout << v1[i]->getName() << "," << v2[j]->getName();
-                    }
+                if(m[i]->getType() == NOT_MOTIF and 
+                   isBiMotif(m[j]->getType()) ){
+                   lbits.clear(); rbits.clear();
+                   lbits.push_back(0);
+                   rbits.push_back(2);
+                   lbits.push_back(0);
+                   rbits.push_back(3);
+                   lbits.push_back(1);
+                   rbits.push_back(0);
+                   lbits.push_back(1);
+                   rbits.push_back(1);
+
+                   for(int k=0;k<lbits.size();k++){
+                      //reset the string bits.
+                      str_lbits = int2string(lbits[k]);
+                      str_rbits = int2binaryString(rbits[k]);
+
+                      v1 = m[i]->getStrands(lbits[k]);
+                      v2 = m[j]->getStrands(rbits[k]);
+                      for(int a=0;a<2;a++)
+                      for(int b=0;b<2;b++)
+                         cout
+                            << m[i]->getID() << str_lbits + "_" + suffix[a]+ "," 
+                            << m[j]->getID() << str_rbits + "_" + suffix[b] 
+                            << endl;
+                   }
                 }
 
-                if(m[i]->getType() == BI_INPUT and m[j]->getType() == BI_INPUT){
-                    const int *TT_gate;
-                    TT_gate = getTruthTable[m[i]->getType()];
-                    for(int bit2=0;bit2<4;bit2++){
-                        v1 = m[i]->getStrands(bit2);
-                        v2 = m[j]->getStrands(!TT_gate[3*bit2+2]);
-                        for (int i=0;i<2;i++)
-                            for(int j=0;j<2;j++)
-                                cout << v1[i]->getName() << "," << v2[j]->getName();
-                    }
+
+                if(isBiMotif(m[i]->getType()) and 
+                   m[j]->getType() == NOT_MOTIF){
+
+                   const int *TT_gate;
+                   TT_gate = getTruthTable[m[i]->getType()];
+                   
+                   lbits.clear(); rbits.clear();
+                   
+                   for(int bit2=0;bit2<4;bit2++){
+                      lbits.push_back(bit2);
+                      rbits.push_back(TT_gate[3*bit2+2]);
+                   }
+
+                   for(int k=0;k<lbits.size();k++){
+                      //reset the string bits.
+                      str_lbits = int2binaryString(lbits[k]);
+                      str_rbits = int2string(rbits[k]);
+
+                      v1 = m[i]->getStrands(lbits[k]);
+                      v2 = m[j]->getStrands(rbits[k]);
+                      for(int a=0;a<2;a++)
+                      for(int b=0;b<2;b++)
+                         cout
+                            << m[i]->getID() << str_lbits + "_" + suffix[a]+ "," 
+                            << m[j]->getID() << str_rbits + "_" + suffix[b] 
+                            << endl;
+                   }
+                }
+
+                if(isBiMotif(m[i]->getType()) and 
+                   isBiMotif(m[j]->getType()) ){
+                   const int *TT_gate;
+                   TT_gate = getTruthTable[m[i]->getType()];
+                   
+                   lbits.clear(); rbits.clear();
+                   
+                   for(int lbit2=0;lbit2<4;lbit2++)
+                   for(int rbit2=0;rbit2<4;rbit2++)
+                      if(TT_gate[3*lbit2+2] !=
+                         rbit2/2) {
+                         lbits.push_back(lbit2);
+                         rbits.push_back(rbit2);
+                      }
+
+                   for(int k=0;k<lbits.size();k++){
+                      //reset the string bits.
+                      str_lbits = int2binaryString(lbits[k]);
+                      str_rbits = int2binaryString(rbits[k]);
+
+                      v1 = m[i]->getStrands(lbits[k]);
+                      v2 = m[j]->getStrands(rbits[k]);
+                      for(int a=0;a<2;a++)
+                      for(int b=0;b<2;b++)
+                         cout
+                            << m[i]->getID() << str_lbits + "_" + suffix[a]+ "," 
+                            << m[j]->getID() << str_rbits + "_" + suffix[b] 
+                            << endl;
+                   }
                 }
             }//end if g[i][j] is 1.
             else if (g[i][j] == 2){
+               cout << "right, i=" << m[i]->getID() << ",j=" << m[j]->getID() << endl;
 
                 //right input
                 //need the following functions
@@ -1740,66 +1823,91 @@ void createCheckMapForPythonScript(
                 //getStrandsThatDontAcceptBit(bit)
                 //getStrands()
 
-                if(m[i]->getType() == BIT and m[j]->getType() == BI_INPUT){
-                    v1 = m[i]->getStrands(0);
-                    v2 = m[j]->getStrands(0);
-                    cout << v1[0]->getName() << "," << v2[0]->getName();
-                    cout << v1[0]->getName() << "," << v2[1]->getName();
-                    v2 = m[j]->getStrands(1);
-                    cout << v1[0]->getName() << "," << v2[0]->getName();
-                    cout << v1[0]->getName() << "," << v2[1]->getName();
+                if(m[i]->getType() == BIT_MOTIF and 
+                   isBiMotif(m[j]->getType()) ){
+                   lbits.clear(); rbits.clear();
+                   lbits.push_back(0);
+                   rbits.push_back(1);
+                   lbits.push_back(0);
+                   rbits.push_back(3);
+                   lbits.push_back(1);
+                   rbits.push_back(0);
+                   lbits.push_back(1);
+                   rbits.push_back(2);
 
-                    v1 = m[i]->getStrands(1);
-                    v2 = m[j]->getStrands(2);
-                    cout << v1[0]->getName() << "," << v2[0]->getName();
-                    cout << v1[0]->getName() << "," << v2[1]->getName();
-                    v2 = m[j]->getStrands(3);
-                    cout << v1[0]->getName() << "," << v2[0]->getName();
-                    cout << v1[0]->getName() << "," << v2[1]->getName();
+                   for(int k=0;k<lbits.size();k++){
+                      //reset the string bits.
+                      str_lbits = int2string(lbits[k]);
+                      str_rbits = int2binaryString(rbits[k]);
+
+                      v1 = m[i]->getStrands(lbits[k]);
+                      v2 = m[j]->getStrands(rbits[k]);
+                      for(int a=0;a<2;a++)
+                         cout
+                            << m[i]->getID() << str_lbits + "_" + suffix[0]+ "," 
+                            << m[j]->getID() << str_rbits + "_" + suffix[a] 
+                            << endl;
+                   }
                 }
 
-                if(m[i]->getType() == NOT and m[j]->getType() == BI_INPUT){
-                    v1 = m[i]->getStrands(0);
-                    v2 = m[j]->getStrands(0);
-                    cout << v1[0]->getName() << "," << v2[0]->getName();
-                    cout << v1[0]->getName() << "," << v2[1]->getName();
-                    cout << v1[1]->getName() << "," << v2[0]->getName();
-                    cout << v1[1]->getName() << "," << v2[1]->getName();
+                if(m[i]->getType() == NOT_MOTIF and 
+                   isBiMotif(m[j]->getType()) ){
+                   lbits.clear(); rbits.clear();
+                   lbits.push_back(0);
+                   rbits.push_back(1);
+                   lbits.push_back(0);
+                   rbits.push_back(3);
+                   lbits.push_back(1);
+                   rbits.push_back(0);
+                   lbits.push_back(1);
+                   rbits.push_back(2);
 
-                    v1 = m[i]->getStrands(0);
-                    v2 = m[j]->getStrands(1);
-                    cout << v1[0]->getName() << "," << v2[0]->getName();
-                    cout << v1[0]->getName() << "," << v2[1]->getName();
-                    cout << v1[1]->getName() << "," << v2[0]->getName();
-                    cout << v1[1]->getName() << "," << v2[1]->getName();
+                   for(int k=0;k<lbits.size();k++){
+                      //reset the string bits.
+                      str_lbits = int2string(lbits[k]);
+                      str_rbits = int2binaryString(rbits[k]);
 
-                    v1 = m[i]->getStrands(1);
-                    v2 = m[j]->getStrands(2);
-                    cout << v1[0]->getName() << "," << v2[0]->getName();
-                    cout << v1[0]->getName() << "," << v2[1]->getName();
-                    cout << v1[1]->getName() << "," << v2[0]->getName();
-                    cout << v1[1]->getName() << "," << v2[1]->getName();
-
-                    v1 = m[i]->getStrands(1);
-                    v2 = m[j]->getStrands(3);
-                    cout << v1[0]->getName() << "," << v2[0]->getName();
-                    cout << v1[0]->getName() << "," << v2[1]->getName();
-                    cout << v1[1]->getName() << "," << v2[0]->getName();
-                    cout << v1[1]->getName() << "," << v2[1]->getName();
+                      v1 = m[i]->getStrands(lbits[k]);
+                      v2 = m[j]->getStrands(rbits[k]);
+                      for(int a=0;a<2;a++)
+                      for(int b=0;b<2;b++)
+                         cout
+                            << m[i]->getID() << str_lbits + "_" + suffix[a]+ "," 
+                            << m[j]->getID() << str_rbits + "_" + suffix[b] 
+                            << endl;
+                   }
                 }
 
-                if(m[i]->getType() == BI_INPUT and m[j]->getType() == BI_INPUT){
-                    const int *TT_gate;
-                    TT_gate = getTruthTable[m[i]->getType()];
-                    for(int bit2=0;bit2<4;bit2++){
-                        v1 = m[i]->getStrands(bit2);
-                        v2 = m[j]->getStrands(!TT_gate[3*bit2+2]);
-                        for (int i=0;i<2;i++)
-                            for(int j=0;j<2;j++)
-                                cout << v1[i]->getName() << "," << v2[j]->getName();
-                    }
+                if(isBiMotif(m[i]->getType()) and 
+                   isBiMotif(m[j]->getType()) ){
+                   const int *TT_gate;
+                   TT_gate = getTruthTable[m[i]->getType()];
+                   
+                   lbits.clear(); rbits.clear();
+                   
+                   for(int lbit2=0;lbit2<4;lbit2++)
+                   for(int rbit2=0;rbit2<4;rbit2++)
+                      if(TT_gate[3*lbit2+2] !=
+                         rbit2%2) {
+                         lbits.push_back(lbit2);
+                         rbits.push_back(rbit2);
+                      }
+
+                   for(int k=0;k<lbits.size();k++){
+                      //reset the string bits.
+                      str_lbits = int2binaryString(lbits[k]);
+                      str_rbits = int2binaryString(rbits[k]);
+
+                      v1 = m[i]->getStrands(lbits[k]);
+                      v2 = m[j]->getStrands(rbits[k]);
+                      for(int a=0;a<2;a++)
+                      for(int b=0;b<2;b++)
+                         cout
+                            << m[i]->getID() << str_lbits + "_" + suffix[a]+ "," 
+                            << m[j]->getID() << str_rbits + "_" + suffix[b] 
+                            << endl;
+                   }
                 }
-                */
             }//end if g[i][j] is 2.
         }//end for loop
         return;
