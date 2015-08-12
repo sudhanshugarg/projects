@@ -474,6 +474,7 @@ vector<STRAND> DNAMotif::getStrands(int bit){
 }
 
 set<pair<string, string> > DNAMotif::getUniqueDomains(void){
+    cerr << "in the dnamotif getUniqueDomains " << endl;
     set<pair<string, string> > ret, current;
     set<pair<string, string> >::iterator it;
     for(int i=0;i<4;i++){
@@ -485,7 +486,6 @@ set<pair<string, string> > DNAMotif::getUniqueDomains(void){
             ret.insert(*it);
     }
     return ret;
-    cerr << "in the dnamotif getUniqueDomains " << endl;
 }
 
 vector<string> DNAMotif::printNupackStructureAndSequence(
@@ -722,6 +722,7 @@ string reverseComplement(string seq){
 }
 
 set<pair<string, string> > STRAND::getUniqueDomains(void){
+    cerr << "in the STRAND getUniqueDomains" << endl;
     int len = name.size();
     set<pair<string, string> > ret;
     pair<string, string> p;
@@ -821,6 +822,7 @@ typedef class BIT : public DNAMotif{
         }
 
         set<pair<string, string> > getUniqueDomains(void){
+            cerr << "in the BIT getUniqueDomains" << endl;
             set<pair<string, string> > ret, current;
             set<pair<string, string> >::iterator it;
             for(int i=0; i<2; i++){
@@ -1398,6 +1400,7 @@ typedef class NOT : public DNAMotif {
         }
 
         set<pair<string, string> > getUniqueDomains(void){
+            cerr << "in the NOT getUniqueDomains" << endl;
             set<pair<string, string> > ret, current;
             set<pair<string, string> >::iterator it;
             for(int i=0; i<2; i++){
@@ -1409,7 +1412,6 @@ typedef class NOT : public DNAMotif {
                     ret.insert(*it);
             }
             return ret;
-            cerr << "in the NOT getUniqueDomains" << endl;
         }
 
         vector<string> printNupackStructureAndSequence(
