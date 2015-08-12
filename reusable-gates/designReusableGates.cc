@@ -8,6 +8,8 @@
 #include<unistd.h>
 #include<set>
 #include<cstdlib>
+#include<algorithm>
+//##include<ctype>
 #include "STRAND.h"
 using namespace std;
 
@@ -471,9 +473,9 @@ vector<STRAND> DNAMotif::getStrands(int bit){
     cerr << "in the dnamotif getStrands " << endl;
 }
 
-set<string> DNAMotif::getUniqueDomains(void){
-    set<string> ret, current;
-    set<string>::iterator it;
+set<pair<string, string> > DNAMotif::getUniqueDomains(void){
+    set<pair<string, string> > ret, current;
+    set<pair<string, string> >::iterator it;
     for(int i=0;i<4;i++){
         current = andStrand[i]->getUniqueDomains();
         for(it = current.begin(); it != current.end(); it++)
@@ -519,6 +521,11 @@ void DNAMotif::constructCRN(const string &id1, const string &id2, const int &f1,
     }
     else
         id[2] = id2;
+}
+
+int DNAMotif::parseStrand(const string &name, const string &seq){
+    cerr << "in dnamotif parseStrand" << endl;
+    return 0;
 }
 
 //STRAND methods
@@ -613,6 +620,7 @@ void STRAND::push(string s){
         complement.push_back(0);
     }
     domainSize.push_back(TOEHOLD_DEFAULT_LENGTH);
+    domainSeq.push_back("");
 }
 
 string STRAND::getNewDomain(string prefix){
@@ -651,11 +659,13 @@ void STRAND::createFromVector(vector<string> s){
     name.resize(s.size());
     complement.resize(s.size());
     domainSize.resize(s.size());
+    domainSeq.resize(s.size());
 
     for(int i=0;i<s.size();i++){
         complement[i] = 0;
         name[i] = s[i];
         domainSize[i] = TOEHOLD_DEFAULT_LENGTH;
+        domainSeq[i] = "";
 
         int last = s[i].length() - 1;
         if(s[i][last] == '*'){
@@ -698,11 +708,31 @@ int STRAND::getNumberOfDomains(void){
     return name.size();
 }
 
-set<string> STRAND::getUniqueDomains(void){
+string reverseComplement(string seq){
+    transform(seq.begin(), seq.end(),
+        seq.begin(), ::toupper);
+    replace(seq.begin(), seq.end(), 'A','X');
+    replace(seq.begin(), seq.end(), 'T','A');
+    replace(seq.begin(), seq.end(), 'X','T');
+    replace(seq.begin(), seq.end(), 'C','X');
+    replace(seq.begin(), seq.end(), 'G','C');
+    replace(seq.begin(), seq.end(), 'X','G');
+    reverse(seq.begin(), seq.end());
+    return seq;
+}
+
+set<pair<string, string> > STRAND::getUniqueDomains(void){
     int len = name.size();
-    set<string> ret;
-    for (int i=0;i<len;i++)
-        ret.insert(name[i]);
+    set<pair<string, string> > ret;
+    pair<string, string> p;
+    for (int i=0;i<len;i++){
+        p.first = name[i];
+        if(complement[i])
+            p.second = reverseComplement(domainSeq[i]);
+        else
+            p.second = domainSeq[i];
+        ret.insert(p);
+    }
     return ret;
 }
 
@@ -712,6 +742,21 @@ int STRAND::getDomainLength(int pos){
 
 string STRAND::getName(void){
 }
+
+int STRAND::parseDomains(const string &seq){
+    int len = domainSize.size();
+    int pos = 0;
+    for(int i=0;i<len;i++){
+        domainSeq[i] = seq.substr(pos,domainSize[i]);
+        pos += domainSize[i];
+    }
+    if(pos != seq.size())
+        throw "Error in parseDomains, sequence and domain lengths do not match";
+    return len;
+}
+
+//END of STRAND member functions.
+//START OF BIT CLASS
 
 typedef class BIT : public DNAMotif{
     public:
@@ -775,11 +820,14 @@ typedef class BIT : public DNAMotif{
             return ret;
         }
 
-        set<string> getUniqueDomains(void){
-            set<string> ret, current;
-            set<string>::iterator it;
+        set<pair<string, string> > getUniqueDomains(void){
+            set<pair<string, string> > ret, current;
+            set<pair<string, string> >::iterator it;
             for(int i=0; i<2; i++){
                 current = andStrand[i]->getUniqueDomains();
+                for(it = current.begin(); it != current.end(); it++)
+                    ret.insert(*it);
+                current = gateStrand[i]->getUniqueDomains();
                 for(it = current.begin(); it != current.end(); it++)
                     ret.insert(*it);
             }
@@ -825,6 +873,24 @@ typedef class BIT : public DNAMotif{
             cerr << "having trouble here it seems" << endl;
             ret.push_back(*andStrand[bit]);
             return ret;
+        }
+
+        int parseStrand(const string &name, const string &seq){
+            //Assuming some standard format.
+            //char 0 -> name of the strand.
+            //char 1 gives out which bit 
+            //this corresponds to.
+            //char 2 is always _.
+            //char 3 is always Z 
+            int bit = name[1]-'0';
+            switch(name[3]){
+                case 'Z':
+                    return andStrand[bit]->parseDomains(seq);
+                default:
+                    string err = name + "invalid strand name in BIT";
+                    throw err.c_str();
+                    return -1;
+            }
         }
 }BIT;
 
@@ -1196,6 +1262,28 @@ typedef class BI_INPUT : public DNAMotif {
             return ret;
         }
 
+        int parseStrand(const string &name, const string &seq){
+            //Assuming some standard format.
+            //char 0 -> name of the strand.
+            //char 1,2 give out which bit 
+            //this corresponds to.
+            //char 3 is always _.
+            //char 4 is either Z or G based on 
+            //and or gate strand.
+            int bit2 = (name[1]-'0')*2+(name[2]-'0');
+            switch(name[4]){
+                case 'Z':
+                    return andStrand[bit2]->parseDomains(seq);
+                case 'G':
+                    return gateStrand[bit2]->parseDomains(seq);
+                default:
+                    string err;
+                    err = name + "invalid strand name in BI_INPUT";
+                    throw err.c_str();
+                    return -1;
+            }
+        }
+
 }BI_INPUT;
 
 typedef class NOT : public DNAMotif {
@@ -1309,11 +1397,14 @@ typedef class NOT : public DNAMotif {
             return ret;
         }
 
-        set<string> getUniqueDomains(void){
-            set<string> ret, current;
-            set<string>::iterator it;
+        set<pair<string, string> > getUniqueDomains(void){
+            set<pair<string, string> > ret, current;
+            set<pair<string, string> >::iterator it;
             for(int i=0; i<2; i++){
                 current = andStrand[i]->getUniqueDomains();
+                for(it = current.begin(); it != current.end(); it++)
+                    ret.insert(*it);
+                current = gateStrand[i]->getUniqueDomains();
                 for(it = current.begin(); it != current.end(); it++)
                     ret.insert(*it);
             }
@@ -1376,6 +1467,26 @@ typedef class NOT : public DNAMotif {
             vector<STRAND> ret;
             ret.push_back(*andStrand[bit]);
             return ret;
+        }
+
+        int parseStrand(const string &name, const string &seq){
+            //Assuming some standard format.
+            //char 0 -> name of the strand.
+            //char 1 gives out which bit 
+            //this corresponds to.
+            //char 2 is always _.
+            //char 3,4 together are either Z or NG based on 
+            //and or gate strand.
+            int bit = name[1]-'0';
+            switch(name[3]){
+                case 'Z':
+                    return andStrand[bit]->parseDomains(seq);
+                case 'N':
+                    return gateStrand[bit]->parseDomains(seq);
+                default:
+                    throw "invalid strand name in NOT";
+                    return -1;
+            }
         }
 
 }NOT;
@@ -1561,22 +1672,82 @@ void topologicalSort (vector<vector <int > > &g, vector<int> &ret){
     return;
 }
 
+void readNupackMapFile(string &npMap){
+    ifstream file;
+    file.open(npMap.c_str());
+    string line;
+    string s1,s2;
+    while(std::getline(file, line)){
+        istringstream iss(line);
+        iss >> s1;
+        iss >> s2;
+        if(s1.size() == 0 || s2.size() == 0){
+            cerr << "encountered wrong input line" << endl;
+            continue;
+        }
+        nupackMap[s1] = s2;
+        line.clear();
+        s1.clear(); s2.clear();
+    }
+    file.close();
+}
+
+int readNupackOutputFile(string &npOfile){
+    ifstream file;
+    file.open(npOfile.c_str());
+    string line;
+    string s1,s2;
+    int input=-1;
+    while(std::getline(file, line)){
+        istringstream iss(line);
+        iss >> s1;
+        iss >> s2;
+        if(s1 == "Normalized"){
+            cerr << "encountered next input" << endl;
+            input++;
+            continue;
+        }
+        else if (s1.size() == 0 or s2.size() == 0){
+            cerr << "encountered wrong input line" << endl;
+            continue;
+        }
+        inputStrands[input][s1] = s2;
+        line.clear();
+        s1.clear(); s2.clear();
+    }
+    file.close();
+    map<int, map<string, string> >::iterator it;
+    map<string, string>::iterator nt;
+    for(it = inputStrands.begin(); it!= inputStrands.end();
+    it++){
+        cout << "Input: " << it->first << endl;
+        for(nt = (it->second).begin(); nt!=(it->second).end();
+        nt++)
+            cout << nupackMap[nt->first] << "," << nt->second << endl;
+    }
+    return input;
+}
+
+
 void printForNupackDesign(int &n, 
         map<int, DNAMotif*> &m, 
         map<int, int> &names,
-        vector< vector< int> > &g
+        vector< vector< int> > &g,
+        string npDfile
         ){
+
     cout 
         << "material = dna" << endl    
         << "temperature = 25" << endl
         << "trials = 10" << endl
         << "magnesium = 0.0125" << endl    
         << "sodium = 0.5" << endl   
+        << "dangles = all" << endl   
         << endl
         ;
 
-    set<string> allDomains, currDomains;
-    set<string>::iterator it;
+    set<pair<string, string> > allDomains, currDomains;
+    set<pair<string, string> >::iterator it;
 
     //Get Domains
     for(int i=0;i<n;i++){
@@ -1585,16 +1756,27 @@ void printForNupackDesign(int &n,
             allDomains.insert(*it);
     }
     for(it = allDomains.begin(); it!=allDomains.end(); it++)
-        cout << "domain " << *it 
-            << " = N5"
+        cout 
+            << "domain " << it->first
+            << " = "
+            << it->second
             << endl;
     cout << endl;
 
     //Get structure and seq for each dna motif
     for(int i=0;i<n;i++){
-        cerr << "and that is a wrap" << endl;
         m[i]->printNupackStructureAndSequence(m,names,g);
     }
+    cout 
+    << endl
+    << "domain stem = CGGTG" << endl
+    << "domain loop = GAGAAGAGAAAG" << endl
+    << "structure MB = D5 U12" << endl
+    << "MB.seq = stem loop stem*" << endl
+    << "prevent = GGGGG" << endl
+    << endl;
+
+    cerr << "and that is a wrap" << endl;
 
 }
 
@@ -1913,9 +2095,46 @@ void createCheckMapForPythonScript(
         return;
 }
 
+void readDomainEnergy(string &deFile){
+    ifstream file;
+    file.open(deFile.c_str());
+    string line;
+    string s1;
+    float energy;
+    while(std::getline(file, line)){
+        istringstream iss(line);
+        iss >> s1;
+        iss >> energy;
+        if(s1.size() == 0){
+            cerr << "encountered wrong input line" << endl;
+        }
+        domainEnergy[s1] = energy;
+    }
+    return;
+}
+
+void associateStrandWithObject(int &input,
+        map<int, DNAMotif*> &m, 
+        map<int, int> &names
+    ){
+    map<string, string>::iterator it;
+    string s;
+    for(it = inputStrands[input].begin();
+        it!= inputStrands[input].end();
+        it++){
+        s = nupackMap[it->first];
+        int num = s[0]-'A';
+        //it->first is the name of the strand.
+        //it->second is the sequence of the strand.
+        if(s != "MB")
+            m[names[num]]->parseStrand(s, it->second);
+    }
+    return;
+}
+
 
 void print_usage(void){
-    cout << "Usage: ./a.out -f <enable fanout> -r <enable reusable> [file]"
+    cout << "Usage: ./a.out -f <enable fanout> -r <enable reusable> [file] [mapfile] [readFromNupackfile] [writeDesign.np] [domainenergy.txt]"
         << endl;
 }
 
@@ -1927,6 +2146,14 @@ int main(int argc, char *argv[])
         vector <vector<int> >g;
         map<int, DNAMotif* > m;
         map<int, int> names;
+
+
+        if(argc < 6 || argc > 9){
+            print_usage();
+            exit(-1);
+        }
+    
+
         cout << argv[1] << endl;
         initialize();
 
@@ -2126,14 +2353,30 @@ int main(int argc, char *argv[])
         }
 
         //print for NUPACK
-        printForNupackDesign(n,m,names,g);
+        string npMap = string(argv[2]);
+        readNupackMapFile(npMap);
+        string npOfile = string(argv[3]);
+        int numDesigns = readNupackOutputFile(npOfile);
+        string nupackDesignFile = string(argv[4]);
+        cout << numDesigns << endl;
+        string deFile = string(argv[5]);
+        readDomainEnergy(deFile);
+
+        //associateStrandWithObject
+        for(int i=0;i<numDesigns;i++){
+            associateStrandWithObject(i,m,names);
+            printForNupackDesign(n,m,names,g, 
+            nupackDesignFile);
+            cout << "Next Design" << endl;
+        }
+
 
         createCheckMapForPythonScript(n,m,names,g);
 
         deleteInput(n, m);
     }
 
-    catch (string err){
+    catch (const char  *err){
         cout << "Caught ERROR: " << err << endl;
         return -1;
     }

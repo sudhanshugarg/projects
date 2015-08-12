@@ -30,6 +30,9 @@ enum CIRCUIT_TYPE {ONE_TIME, REUSABLE, JIANG};
 const string DOMAINPREFIX = "w";
 const string PREFIX2 = "k";
 const int TOEHOLD_DEFAULT_LENGTH = 5;
+map<string, string> nupackMap;
+map<int, map<string, string> > inputStrands;
+map<string, float> domainEnergy;
 
 
 //TT == TRUTH_TABLE
@@ -87,11 +90,12 @@ typedef class DNAMotif{
         virtual string getDomain(int bit, int idx, TOEHOLD_TYPE type = NORMAL);
         virtual string getComplementDomain(int bit, int idx);
         virtual vector<STRAND> getStrands(int bit=-1);
-        virtual set<string> getUniqueDomains(void);
+        virtual set<pair<string, string> > getUniqueDomains(void);
         virtual vector<string> printNupackStructureAndSequence(
                 map<int, DNAMotif*> &m, 
                 map<int, int> &names, vector<vector<int> >&g);
         virtual vector<STRAND> getOutputStrandList(int bit=0);
+        virtual int parseStrand(const string &name, const string &seq);
 
     private:
         MOTIF_TYPE istype;
@@ -124,14 +128,16 @@ typedef class STRAND : public DNAMotif{
         vector<STRAND> getStrands(int bit=-1);
         string getID(void);
         int getNumberOfDomains(void);
-        set<string> getUniqueDomains(void);
+        set<pair<string, string> > getUniqueDomains(void);
         int getDomainLength(int pos=0);
         string getName(void);
+        int parseDomains(const string &seq);
 
     private:
         vector<string> name;
         vector<bool> complement;
         vector<int> domainSize;
+        vector<string>domainSeq;
         static map<string, int> nextNumber;
 
         void createFromVector(vector<string> s);
