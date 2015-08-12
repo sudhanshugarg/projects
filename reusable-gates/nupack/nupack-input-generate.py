@@ -160,9 +160,10 @@ class Strands(object):
 
                 #Done reading the file
                 if flag == 1:
-                    print "Input: " + str(whichInput) + " : " + fname + " DOESNT WORK"
+                    #print "Input: " + str(whichInput) + " : " + fname + " DOESNT WORK"
+                    x = 1
                 else:
-                    print "Input: " + str(whichInput) + " : " + fname + " works"
+                    #print "Input: " + str(whichInput) + " : " + fname + " works"
                     ret[-1] += 1
 
                 #Now, close the file and continue with the next file in the same input
@@ -341,38 +342,65 @@ def sieveEachStrand(num, fenergy):
     global checkMap
     global domainEnergyMap
 
+
     reOutput = '_Z$'
     reGate = '_G$'
     reNotGate = '_NG$'
     reStrandisOutput = re.compile(reOutput)
     reStrandisGate = re.compile(reGate)
     reStrandisNOTGate = re.compile(reNotGate)
+    e = []
+    perInputGateStability = [dict() for i in range(num)]
+    numDomainsGateStability = [dict() for i in range(num)]
 
     for i in range(num):
-       #check if all domains match required criteria.
-       for key in inputStrands[i]:
-          #print "current key:", key
-          if(reStrandisOutput.search(key)):
-             #print "matched output"
-             storeDomainFreeEnergy(inputStrands[i][key], 5, fenergy)
-          if(reStrandisGate.search(key)):
-             #print "matched gate"
-             storeDomainFreeEnergy(inputStrands[i][key], 7, fenergy)
-          if(reStrandisNOTGate.search(key)):
-             #print "matched not gate"
-             storeDomainFreeEnergy(inputStrands[i][key], 4, fenergy)
-
-       #endfor
-    #endfor
+        #perInputGateStability[i] = dict()
+        #check if all domains match required criteria.
+        for key in inputStrands[i]:
+            #print i,"current key:", key, ":", inputStrands[i][key]
+             del e[:]
+             if(reStrandisOutput.search(key)):
+                 #print "matched output"
+                 e = storeDomainFreeEnergy(inputStrands[i][key], 5, fenergy)
+             if(reStrandisGate.search(key)):
+                 #print "matched gate"
+                 e = storeDomainFreeEnergy(inputStrands[i][key], 7, fenergy)
+             if(reStrandisNOTGate.search(key)):
+                 #print "matched not gate"
+                 e = storeDomainFreeEnergy(inputStrands[i][key], 4, fenergy)
+             domains = len(e)
+             if(domains == 0):
+                 continue
+             count = domains
+             for j in range(domains):
+                 if(e[j] > -7 or e[j] < -8):
+                     count -= 1
+             #print i,":",key,":",count,":",e
+             if key[:1] in perInputGateStability[i]:
+                 perInputGateStability[i][key[:1]] += float(count)/float(domains)
+                 numDomainsGateStability[i][key[:1]] += 1
+             else:
+                 perInputGateStability[i][key[:1]] = float(count)/float(domains)
+                 numDomainsGateStability[i][key[:1]] = 1
+        #for k in sorted(perInputGateStability[i].keys()):
+        #    print perInputGateStability[i][k]
+        for key in perInputGateStability[i]:
+            perInputGateStability[i][key] /= numDomainsGateStability[i][key]
+            perInputGateStability[i][key] = round(perInputGateStability[i][key],2)
+        print perInputGateStability[i]
+        #endfor
+     #endfor
 #end sieveEachStrand
 
 def storeDomainFreeEnergy(strand, domains, fenergy):
    global domainEnergyMap
+   ret = []
    domainLength = len(strand)/domains
    for i in range(domains):
       singleDomain = strand[i*domainLength:(i+1)*domainLength]
-      calcAndStoreDomainEnergy(singleDomain, fenergy)
+      ret.append(calcAndStoreDomainEnergy(singleDomain, fenergy))
    #endfor
+   return ret
 #end storeDomainFreeEnergy
 
 #bound the domain by two pre-defined domains, and
@@ -382,7 +410,7 @@ def storeDomainFreeEnergy(strand, domains, fenergy):
 def calcAndStoreDomainEnergy(singleDomain, fenergy):
 
     if singleDomain in domainEnergyMap:
-       return
+       return domainEnergyMap[singleDomain]
 
     now = datetime.datetime.now()
     #create a file with input strands
@@ -392,7 +420,7 @@ def calcAndStoreDomainEnergy(singleDomain, fenergy):
     strand1 = PREFIX + singleDomain + SUFFIX
     strand2 = reverseComplement(strand1)
     both = [strand1,strand2]
-    duplexMfe = computeMfe(both, strand1)
+    duplexMfe = computeMfe(both, strand1+strand2)
 
     energy = duplexMfe - computeMfe(BasicStrandList, BasicStrandName)
 
@@ -401,17 +429,17 @@ def calcAndStoreDomainEnergy(singleDomain, fenergy):
     f.close()
 
     domainEnergyMap[singleDomain] = energy
+    return energy
 #end calcAndStoreDomainEnergy
 
 def createPairedInput(num):
    global inputStrands
    global nameMap
    global checkMap
-   actualNum = 0
    for whichInput in range(num):
       for i in range(len(checkMap)):
          w = checkMap[i].split(',')
-         fname = DIR + str(actualNum) + '_' + w[0] + '_' + w[1]
+         fname = DIR + str(whichInput) + '_' + w[0] + '_' + w[1]
 
          f = open(fname+'.in','w')
          f.write('2\n')
@@ -420,39 +448,10 @@ def createPairedInput(num):
          f.write('1 2\n')
          f.close()
          runMfe(fname)
-   actualNum += 1
-   return actualNum
 #end createPairedInput
 
-
-def createCheckMap(num):
-   global inputStrands
-   global nameMap
-   global checkMap
-
-   checkMap2 = dict()
-
-
-
-
-   actualNum = 0
-   for whichInput in range(num):
-      for i in range(len(checkMap)):
-         w = checkMap[i].split(',')
-         fname = DIR + str(actualNum) + '_' + w[0] + '_' + w[1]
-
-         f = open(fname+'.in','w')
-         f.write('2\n')
-         f.write(inputStrands[whichInput][w[0]]+'\n');
-         f.write(inputStrands[whichInput][w[1]]+'\n');
-         f.write('1 2\n')
-         f.close()
-         runMfe(fname)
-   actualNum += 1
-   return actualNum
-#end createCheckMap
-
 def main():
+    global checkMap
     if(len(sys.argv) != 4):
        print "Usage: python filename.py sequence.np xor.map domainEnergy.txt"
        return
@@ -464,11 +463,10 @@ def main():
     #print s.getStrand('MB')
     sieveEachStrand(num, sys.argv[3])
     print "sieving strands done"
-    createCheckMap()
     createPairedInput(num)
     ret = s.checkOutput(num)
     for i in range(num):
-        print i, ret[i]
+        print i, ret[i], '/', len(checkMap)
 
 #end main()
 

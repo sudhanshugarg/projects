@@ -1646,7 +1646,7 @@ void createCheckMapForPythonScript(
             //if direct edge in or out of gate
             if(g[i][j] == 1){
                 
-                cout << "i=" << m[i]->getID() << ",j=" << m[j]->getID() << endl;
+                //cout << "i=" << m[i]->getID() << ",j=" << m[j]->getID() << endl;
                 //left input
                 //need the following functions
                 //getStrandsThatAcceptBit(bit)
@@ -1815,7 +1815,7 @@ void createCheckMapForPythonScript(
                 }
             }//end if g[i][j] is 1.
             else if (g[i][j] == 2){
-               cout << "right, i=" << m[i]->getID() << ",j=" << m[j]->getID() << endl;
+               //cout << "right, i=" << m[i]->getID() << ",j=" << m[j]->getID() << endl;
 
                 //right input
                 //need the following functions
