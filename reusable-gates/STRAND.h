@@ -33,6 +33,8 @@ const int TOEHOLD_DEFAULT_LENGTH = 5;
 map<string, string> nupackMap;
 map<int, map<string, string> > inputStrands;
 map<string, float> domainEnergy;
+const float LOW_DELG_THRESHOLD = -8.2;
+const float HIGH_DELG_THRESHOLD = -7.2;
 
 
 //TT == TRUTH_TABLE

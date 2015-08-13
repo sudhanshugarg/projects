@@ -709,6 +709,9 @@ int STRAND::getNumberOfDomains(void){
 }
 
 string reverseComplement(string seq){
+    cerr << "in reverse complement for string:"
+        << seq
+        << endl;
     transform(seq.begin(), seq.end(),
         seq.begin(), ::toupper);
     replace(seq.begin(), seq.end(), 'A','X');
@@ -718,11 +721,20 @@ string reverseComplement(string seq){
     replace(seq.begin(), seq.end(), 'G','C');
     replace(seq.begin(), seq.end(), 'X','G');
     reverse(seq.begin(), seq.end());
+    cerr << "obtained:"
+        << seq
+        << endl;
     return seq;
 }
 
 set<pair<string, string> > STRAND::getUniqueDomains(void){
     cerr << "in the STRAND getUniqueDomains" << endl;
+    cerr << "sizes: "
+        << name.size() << ","
+        << complement.size() << ","
+        << domainSize.size() << ","
+        << domainSeq.size() << ","
+        << endl;
     int len = name.size();
     set<pair<string, string> > ret;
     pair<string, string> p;
@@ -734,6 +746,7 @@ set<pair<string, string> > STRAND::getUniqueDomains(void){
             p.second = domainSeq[i];
         ret.insert(p);
     }
+    cerr << "exiting the STRAND getUniqueDomains" << endl;
     return ret;
 }
 
@@ -829,9 +842,6 @@ typedef class BIT : public DNAMotif{
                 current = andStrand[i]->getUniqueDomains();
                 for(it = current.begin(); it != current.end(); it++)
                     ret.insert(*it);
-                current = gateStrand[i]->getUniqueDomains();
-                for(it = current.begin(); it != current.end(); it++)
-                    ret.insert(*it);
             }
             return ret;
         }
@@ -865,8 +875,9 @@ typedef class BIT : public DNAMotif{
                     << endl;
                 ret.push_back(oss1.str());
                 seq.clear();
+                oss1.clear();
             }
-            cout << oss1.str() << endl;
+            //cout << oss1.str() << endl;
             return ret;
         }
 
@@ -970,8 +981,9 @@ typedef class BI_INPUT : public DNAMotif {
                     << seq
                     << endl;
                 ret.push_back(oss1.str());
+                oss1.clear();
             }
-            cout << oss1.str() << endl;
+            //cout << oss1.str() << endl;
             cerr << "exiting lInputGate function" << endl;
             return ret;
         }
@@ -1032,8 +1044,9 @@ typedef class BI_INPUT : public DNAMotif {
                     << seq
                     << endl;
                 ret.push_back(oss1.str());
+                oss1.clear();
             }
-            cout << oss1.str() << endl;
+            //cout << oss1.str() << endl;
             cerr << "exiting rInputGate function" << endl;
             return ret;
         }
@@ -1111,9 +1124,10 @@ typedef class BI_INPUT : public DNAMotif {
                     << seq
                     << endl;
                 ret.push_back(oss1.str());
+                oss1.clear();
             }
             }
-            cout << oss1.str() << endl;
+            //cout << oss1.str() << endl;
             cerr << "exiting bothInputGate function" << endl;
             return ret;
         }
@@ -1167,8 +1181,9 @@ typedef class BI_INPUT : public DNAMotif {
                     << seq
                     << endl;
                 ret.push_back(oss1.str());
+                oss1.clear();
             }
-            cout << oss1.str() << endl;
+            //cout << oss1.str() << endl;
             cerr << "exiting outputGate function" << endl;
             return ret;
         }
@@ -1205,6 +1220,7 @@ typedef class BI_INPUT : public DNAMotif {
             }
 
             vector<STRAND> lOutputStrands, rOutputStrands;
+            vector<string> collect;
 
             for(int bit2=0;bit2<4;bit2++){
 
@@ -1215,50 +1231,18 @@ typedef class BI_INPUT : public DNAMotif {
                 lOutputStrands = m[lInput]->getOutputStrandList(lbit);
                 rOutputStrands = m[rInput]->getOutputStrandList(rbit);
 
-                lInputGateNupackComplex(bit2, lOutputStrands, *gateStrand[bit2]);
-                rInputGateNupackComplex(bit2, rOutputStrands, *gateStrand[bit2]);
-                bothInputGateNupackComplex(bit2, lOutputStrands, rOutputStrands, *gateStrand[bit2]);
+                collect = lInputGateNupackComplex(bit2, lOutputStrands, *gateStrand[bit2]);
+                for(int i=0;i<collect.size();i++) ret.push_back(collect[i]);
+                collect = rInputGateNupackComplex(bit2, rOutputStrands, *gateStrand[bit2]);
+                for(int i=0;i<collect.size();i++) ret.push_back(collect[i]);
+                collect = bothInputGateNupackComplex(bit2, lOutputStrands, rOutputStrands, *gateStrand[bit2]);
+                for(int i=0;i<collect.size();i++) ret.push_back(collect[i]);
                 vector<STRAND> outputStrs;
                 outputStrs.push_back(*andStrand[bit2]);
-                outputGateNupackComplex(bit2, outputStrs, *gateStrand[bit2]);
+                collect = outputGateNupackComplex(bit2, outputStrs, *gateStrand[bit2]);
+                for(int i=0;i<collect.size();i++) ret.push_back(collect[i]);
                 cerr << "passed the output strand " << bit2 << endl;
 
-                //now, associate the left output strands with the current gate 
-                //strand, and the right output strands with the current gate 
-                //strand, and then a combination of both.
-                /*
-                numDomains = andStrand[bit2]->getNumberOfDomains();
-                cerr << "passed the 2 output strand " << bit2 << endl;
-                len = 0;
-                for(int i=0;i<numDomains;i++){
-                    len += andStrand[bit2]->getDomainLength(i);
-                    seq += andStrand[bit2]->getDomain(bit2,i) + " ";
-                }
-
-                numDomains = gateStrand[bit2]->getNumberOfDomains();
-                for(int i=0;i<numDomains;i++){
-                    seq += gateStrand[bit2]->getDomain(bit2,i) + " ";
-                }
-
-                cerr << "passed the gate strand " << bit2 << endl;
-                oss1 << "structure "
-                    << getDSDName(bit2)
-                    << "_ZG = D"
-                    << len
-                    << " (+ U"
-                    << gateStrand[bit2]->getDomainLength(0)
-                    << ") U"
-                    << gateStrand[bit2]->getDomainLength(6)
-                    << endl;
-
-
-                oss1 << getDSDName(bit2)
-                    << "_ZG.seq = "
-                    << seq
-                    << endl;
-                ret.push_back(oss1.str());
-                seq.clear();
-                */
             }
             //cout << oss1.str() << endl;
             return ret;
@@ -1459,9 +1443,10 @@ typedef class NOT : public DNAMotif {
                     << seq
                     << endl;
                 ret.push_back(oss1.str());
+                oss1.clear();
                 seq.clear();
             }
-            cout << oss1.str() << endl;
+            //cout << oss1.str() << endl;
             return ret;
         }
 
@@ -1738,7 +1723,10 @@ void printForNupackDesign(int &n,
         string npDfile
         ){
 
-    cout 
+    ofstream designFile;
+    designFile.open(npDfile.c_str());
+
+    designFile
         << "material = dna" << endl    
         << "temperature = 25" << endl
         << "trials = 10" << endl
@@ -1757,19 +1745,29 @@ void printForNupackDesign(int &n,
         for(it = currDomains.begin(); it!=currDomains.end(); it++)
             allDomains.insert(*it);
     }
-    for(it = allDomains.begin(); it!=allDomains.end(); it++)
-        cout 
+    for(it = allDomains.begin(); it!=allDomains.end(); it++){
+        designFile
             << "domain " << it->first
-            << " = "
-            << it->second
-            << endl;
-    cout << endl;
+            << " = ";
+        if(domainEnergy[it->second] < LOW_DELG_THRESHOLD or
+           domainEnergy[it->second] > HIGH_DELG_THRESHOLD)
+            designFile << "N" << (it->second).size()
+                << endl;
+        else
+            designFile << it->second
+                << endl;
+    }
+    designFile << endl;
 
     //Get structure and seq for each dna motif
+    vector<string> collect;
     for(int i=0;i<n;i++){
-        m[i]->printNupackStructureAndSequence(m,names,g);
+        collect = m[i]->printNupackStructureAndSequence(m,names,g);
+        for(int j=0;j<collect.size();j++)
+            designFile << collect[i];
     }
-    cout 
+
+    designFile
     << endl
     << "domain stem = CGGTG" << endl
     << "domain loop = GAGAAGAGAAAG" << endl
@@ -1778,8 +1776,8 @@ void printForNupackDesign(int &n,
     << "prevent = GGGGG" << endl
     << endl;
 
-    cerr << "and that is a wrap" << endl;
-
+    designFile.close();
+    cerr << "and that is a wrap for printForNupackDesign" << endl;
 }
 
 bool isBiMotif(MOTIF_TYPE type){
