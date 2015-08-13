@@ -851,11 +851,11 @@ typedef class BIT : public DNAMotif{
                 map<int, int> &names,
                 vector<vector<int> >&g){
             vector<string> ret;
-            ostringstream oss1;
             string seq;
             int numDomains;
             int len;
             for(int bit=0;bit<2;bit++){
+                ostringstream oss1;
                 numDomains = andStrand[bit]->getNumberOfDomains();
                 len = 0;
                 for(int i=0;i<numDomains;i++){
@@ -875,7 +875,6 @@ typedef class BIT : public DNAMotif{
                     << endl;
                 ret.push_back(oss1.str());
                 seq.clear();
-                oss1.clear();
             }
             //cout << oss1.str() << endl;
             return ret;
@@ -926,12 +925,12 @@ typedef class BI_INPUT : public DNAMotif {
 
         vector<string> lInputGateNupackComplex(int bit2, vector<STRAND> &output, STRAND &gate){
             int count = output.size();
-            ostringstream oss1;
             string seq,subname;
             int len1, len2, numDomains;
             vector<string> ret;
             cerr << "in lInputGate function, count=" << count << endl;
             for(int i=0;i<count;i++){
+                ostringstream oss1;
                 //bind output[i] and the gate strand together.
                 numDomains = output[i].getNumberOfDomains();
                 if(numDomains != 5)
@@ -981,7 +980,6 @@ typedef class BI_INPUT : public DNAMotif {
                     << seq
                     << endl;
                 ret.push_back(oss1.str());
-                oss1.clear();
             }
             //cout << oss1.str() << endl;
             cerr << "exiting lInputGate function" << endl;
@@ -990,12 +988,12 @@ typedef class BI_INPUT : public DNAMotif {
 
         vector<string> rInputGateNupackComplex(int bit2, vector<STRAND> &output, STRAND &gate){
             int count = output.size();
-            ostringstream oss1;
             string seq,subname;
             int len1, len2, numDomains;
             vector<string> ret;
             cerr << "in rInputGate function, count=" << count << endl;
             for(int i=0;i<count;i++){
+                ostringstream oss1;
                 //bind output[i] and the gate strand together.
                 numDomains = output[i].getNumberOfDomains();
                 if(numDomains != 5)
@@ -1044,7 +1042,6 @@ typedef class BI_INPUT : public DNAMotif {
                     << seq
                     << endl;
                 ret.push_back(oss1.str());
-                oss1.clear();
             }
             //cout << oss1.str() << endl;
             cerr << "exiting rInputGate function" << endl;
@@ -1054,7 +1051,6 @@ typedef class BI_INPUT : public DNAMotif {
         vector<string> bothInputGateNupackComplex(int bit2, vector<STRAND> &loutput, vector<STRAND> routput, STRAND &gate){
             int lcount = loutput.size();
             int rcount = routput.size();
-            ostringstream oss1;
             string seq,subname;
             int len1, len2, lnumDomains, rnumDomains;
             vector<string> ret;
@@ -1064,6 +1060,7 @@ typedef class BI_INPUT : public DNAMotif {
                 << endl;
             for(int i=0;i<lcount;i++){
             for(int k=0;k<rcount;k++){
+                ostringstream oss1;
                 //bind output[i] and the gate strand together.
                 lnumDomains = loutput[i].getNumberOfDomains();
                 if(lnumDomains != 5)
@@ -1124,7 +1121,6 @@ typedef class BI_INPUT : public DNAMotif {
                     << seq
                     << endl;
                 ret.push_back(oss1.str());
-                oss1.clear();
             }
             }
             //cout << oss1.str() << endl;
@@ -1134,12 +1130,12 @@ typedef class BI_INPUT : public DNAMotif {
 
         vector<string> outputGateNupackComplex(int bit2, vector<STRAND> &output, STRAND &gate){
             int count = output.size();
-            ostringstream oss1;
             string seq,subname;
             int len1, numDomains;
             vector<string> ret;
             cerr << "in outputGate function, count=" << count << endl;
             for(int i=0;i<count;i++){
+                ostringstream oss1;
                 //bind output[i] and the gate strand together.
                 numDomains = output[i].getNumberOfDomains();
                 if(numDomains != 5)
@@ -1181,7 +1177,6 @@ typedef class BI_INPUT : public DNAMotif {
                     << seq
                     << endl;
                 ret.push_back(oss1.str());
-                oss1.clear();
             }
             //cout << oss1.str() << endl;
             cerr << "exiting outputGate function" << endl;
@@ -1221,6 +1216,7 @@ typedef class BI_INPUT : public DNAMotif {
 
             vector<STRAND> lOutputStrands, rOutputStrands;
             vector<string> collect;
+            ret.clear();
 
             for(int bit2=0;bit2<4;bit2++){
 
@@ -1232,15 +1228,19 @@ typedef class BI_INPUT : public DNAMotif {
                 rOutputStrands = m[rInput]->getOutputStrandList(rbit);
 
                 collect = lInputGateNupackComplex(bit2, lOutputStrands, *gateStrand[bit2]);
-                for(int i=0;i<collect.size();i++) ret.push_back(collect[i]);
+                for(int i=0;i<collect.size();i++) {
+                    ret.push_back(collect[i]); 
+                    cout << "IN:" << collect[i] << endl;
+                }
+                collect.clear();
                 collect = rInputGateNupackComplex(bit2, rOutputStrands, *gateStrand[bit2]);
-                for(int i=0;i<collect.size();i++) ret.push_back(collect[i]);
+                for(int i=0;i<collect.size();i++) ret.push_back(collect[i]); collect.clear();
                 collect = bothInputGateNupackComplex(bit2, lOutputStrands, rOutputStrands, *gateStrand[bit2]);
-                for(int i=0;i<collect.size();i++) ret.push_back(collect[i]);
+                for(int i=0;i<collect.size();i++) ret.push_back(collect[i]); collect.clear();
                 vector<STRAND> outputStrs;
                 outputStrs.push_back(*andStrand[bit2]);
                 collect = outputGateNupackComplex(bit2, outputStrs, *gateStrand[bit2]);
-                for(int i=0;i<collect.size();i++) ret.push_back(collect[i]);
+                for(int i=0;i<collect.size();i++) ret.push_back(collect[i]); collect.clear();
                 cerr << "passed the output strand " << bit2 << endl;
 
             }
@@ -1403,11 +1403,11 @@ typedef class NOT : public DNAMotif {
                 map<int, int> &names,
                 vector<vector<int> >&g){
             vector<string> ret;
-            ostringstream oss1;
             string seq;
             int numDomains;
             int len;
             for(int bit=0;bit<2;bit++){
+                ostringstream oss1;
                 numDomains = andStrand[bit]->getNumberOfDomains();
                 //Assuming numDomains is always 5.
                 if(numDomains != 5)
@@ -1443,7 +1443,6 @@ typedef class NOT : public DNAMotif {
                     << seq
                     << endl;
                 ret.push_back(oss1.str());
-                oss1.clear();
                 seq.clear();
             }
             //cout << oss1.str() << endl;
@@ -1669,7 +1668,7 @@ void readNupackMapFile(string &npMap){
         iss >> s1;
         iss >> s2;
         if(s1.size() == 0 || s2.size() == 0){
-            cerr << "encountered wrong input line" << endl;
+            cerr << "nupack map encountered wrong input line" << endl;
             continue;
         }
         nupackMap[s1] = s2;
@@ -1695,7 +1694,7 @@ int readNupackOutputFile(string &npOfile){
             continue;
         }
         else if (s1.size() == 0 or s2.size() == 0){
-            cerr << "encountered wrong input line" << endl;
+            cerr << "nupack output encountered wrong input line" << endl;
             continue;
         }
         inputStrands[input][s1] = s2;
@@ -1712,7 +1711,7 @@ int readNupackOutputFile(string &npOfile){
         nt++)
             cout << nupackMap[nt->first] << "," << nt->second << endl;
     }
-    return input;
+    return input+1;
 }
 
 
@@ -1725,6 +1724,8 @@ void printForNupackDesign(int &n,
 
     ofstream designFile;
     designFile.open(npDfile.c_str());
+    if(!designFile)
+        throw "Could not open design file";
 
     designFile
         << "material = dna" << endl    
@@ -1763,8 +1764,10 @@ void printForNupackDesign(int &n,
     vector<string> collect;
     for(int i=0;i<n;i++){
         collect = m[i]->printNupackStructureAndSequence(m,names,g);
+
         for(int j=0;j<collect.size();j++)
-            designFile << collect[i];
+            designFile << collect[j];
+        //designFile.close(); return;
     }
 
     designFile
@@ -2106,7 +2109,7 @@ void readDomainEnergy(string &deFile){
         iss >> s1;
         iss >> energy;
         if(s1.size() == 0){
-            cerr << "encountered wrong input line" << endl;
+            cerr << "energy encountered wrong input line" << endl;
         }
         domainEnergy[s1] = energy;
     }
@@ -2352,6 +2355,7 @@ int main(int argc, char *argv[])
             }
         }
 
+
         //print for NUPACK
         string npMap = string(argv[2]);
         readNupackMapFile(npMap);
@@ -2362,17 +2366,19 @@ int main(int argc, char *argv[])
         string deFile = string(argv[5]);
         readDomainEnergy(deFile);
 
+        cerr << numDesigns << ":no. of designs" << endl;
         //associateStrandWithObject
         for(int i=0;i<numDesigns;i++){
             associateStrandWithObject(i,m,names);
+            ostringstream oss;
+            oss << nupackDesignFile;
+            oss << "_" << i << ".np";
             printForNupackDesign(n,m,names,g, 
-            nupackDesignFile);
-            cout << "Next Design" << endl;
+            oss.str());
+            cerr << "Next Design" << endl;
         }
 
-
         createCheckMapForPythonScript(n,m,names,g);
-
         deleteInput(n, m);
     }
 
