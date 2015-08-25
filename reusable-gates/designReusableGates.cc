@@ -1772,6 +1772,15 @@ void printForNupackDesign(int &n,
 
     designFile
     << endl
+    << "tube AG = BIT_A_0 BIT_A_1 BIT_G_0 BIT_G_1" << endl
+    << "AG.maxsize = 3" << endl
+    << "tube DG = OR_D_0_ZG OR_D_1_ZG OR_D_2_ZG OR_D_3_ZG BIT_G_0 BIT_G_1" << endl
+    << "DG.maxsize = 3" << endl
+    << "tube AD = BIT_A_0 BIT_A_1 OR_D_0_ZG OR_D_1_ZG OR_D_2_ZG OR_D_3_ZG" << endl
+    << "AD.maxsize = 3" << endl
+    << "tube BC = AND_B_0_ZG AND_B_1_ZG AND_B_2_ZG AND_B_3_ZG AND_C_0_ZG AND_C_1_ZG AND_C_2_ZG AND_C_3_ZG" << endl
+    << "BC.maxsize = 3" << endl
+    << endl
     << "domain stem = CGGTG" << endl
     << "domain loop = GAGAAGAGAAAG" << endl
     << "structure MB = D5 U12" << endl
