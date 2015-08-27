@@ -35,6 +35,7 @@ map<int, map<string, string> > inputStrands;
 map<string, float> domainEnergy;
 const float LOW_DELG_THRESHOLD = -8.2;
 const float HIGH_DELG_THRESHOLD = -7.2;
+set<string> excludedDomain;
 
 
 //TT == TRUTH_TABLE

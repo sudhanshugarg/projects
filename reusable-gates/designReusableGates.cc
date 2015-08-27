@@ -1750,8 +1750,10 @@ void printForNupackDesign(int &n,
         designFile
             << "domain " << it->first
             << " = ";
-        if(domainEnergy[it->second] < LOW_DELG_THRESHOLD or
-           domainEnergy[it->second] > HIGH_DELG_THRESHOLD)
+        //check energy thresholds condition only for non-excluded domains.
+        if((domainEnergy[it->second] < LOW_DELG_THRESHOLD or
+           domainEnergy[it->second] > HIGH_DELG_THRESHOLD) and
+           (excludedDomain.find(it->first) == excludedDomain.end()))
             designFile << "N" << (it->second).size()
                 << endl;
         else
@@ -2366,6 +2368,10 @@ int main(int argc, char *argv[])
 
 
         //print for NUPACK
+        //Domains that should not be 
+        excludedDomain.insert("x3");
+        excludedDomain.insert("y2");
+        excludedDomain.insert("D1");
         string npMap = string(argv[2]);
         readNupackMapFile(npMap);
         string npOfile = string(argv[3]);
