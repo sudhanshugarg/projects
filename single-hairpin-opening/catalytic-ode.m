@@ -65,7 +65,9 @@ function s = solveode(fn, init, t)
 
    t = trc;
    yl8r0 = yl8r0(1:length(t));
+   tl8r0 = tl8r0(1:length(t));
    yl7r1 = yl7r1(1:length(t));
+   tl7r1 = tl7r1(1:length(t));
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    %Calculate Fit.
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -107,23 +109,11 @@ function s = solveode(fn, init, t)
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
    %SMOOTHEN DATA - For now.
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
-   %{
-   y0x2 = supsmu(t,y0x2);
-   y1x3 = supsmu(t,y1x3);
-   ypt5x3 = supsmu(t,ypt5x3);
-   ypt4x2 = supsmu(t,ypt4x2);
-   ypt3x3 = supsmu(t,ypt3x3);
-   ypt2x2 = supsmu(t,ypt2x2);
-   ypt1x3 = supsmu(t,ypt1x3);
-   yptoh5x2 = supsmu(t,yptoh5x2);
-   yt1x1 = supsmu(t,yt1x1);
-   yt1x2 = supsmu(t,yt1x2);
-   yt1x3 = supsmu(t,yt1x3);
+   yl8r0 = supsmu(tl8r0, yl8r0);
+   yl7r1 = supsmu(tl7r1, yl7r1);
+   yrc = supsmu(trc, yrc);
 
-   ya1x1 = supsmu(t,ya1x1);
-   ya1pt5x2 = supsmu(t,ya1pt5x2);
-   ya2x3 = supsmu(t,ya2x3);
-   %}
+
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
    %PLOT DATA
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
@@ -200,11 +190,11 @@ function s = solveode(fn, init, t)
         t,ya1x1,plotColor(7),
         'Linewidth',2,
     %}
-        t,yl8r0,plotColor(1),
+        tl8r0,yl8r0,plotColor(1),
         'Linewidth',2,
-        t,yl7r1,plotColor(2),
+        tl7r1,yl7r1,plotColor(2),
         'Linewidth',2,
-        t,yrc,plotColor(3),
+        trc,yrc,plotColor(3),
         'Linewidth',2,
         'linestyle',':');
         legend(
@@ -213,9 +203,9 @@ function s = solveode(fn, init, t)
         'RC');
         
         FN = findall(h,'-property','FontName');
-        set(FN,'FontName','/usr/share/fonts/truetype/ttf-lucida/LucidaSansDemiBold.ttf');
+        set(FN,'FontName','/usr/share/fonts/truetype/msttcorefonts/Times_New_Roman.ttf');
         FS = findall(h,'-property','FontSize');
-        set(FS,'FontSize',14);
+        %set(FS,'FontSize',14);
 
        i++;
    s = 1;

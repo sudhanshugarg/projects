@@ -80,6 +80,7 @@ function s = solveode2(fn, init, shouldFit)
 
    conc = min([init(19), init(21)]);
    conc = min([conc, init(23)]);
+   conc = 10;
 
    mintime = Inf;
 
@@ -88,7 +89,8 @@ function s = solveode2(fn, init, shouldFit)
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
    %taking last values to mean
    options(1) = 10;
-   %normalize from another curve
+   %options 2 and 3: normalize from another curve
+   %low and high respectively
    options(2) = 0;
    options(3) = 1;
    %concentration
@@ -103,57 +105,23 @@ function s = solveode2(fn, init, shouldFit)
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
    %READ DATA IN
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
-   %cuvette 3
-   options(1) = 100;
-   options(3) = 0;
    options(5) = 0;
-   %{
-   init(12) = 92.15; %TA1
-   [t1x3,y1x3] = processData('system-b/PurifiedSysB-Apr18-200nM.csv' , 3, 4, 760, 7830,options,0,0);
-   %}
+
    options(3) = 1;
-   init(12) = 0; %TA1
-   %max data.
-   [t1x2,y1x2] = readlhcfile('M8-mar2016/M8-Set9-10per-20per-Mar2016/Mar9-rc-c-30nm-50ul-temp33pt1-b1-b2-b3m2-0xta1-laterTA1-20nM.csv' , 1, 2, 160000/60, 165000/60);
-   [t0x2,y0x2] = processData('M8-mar2016/M8-Set9-10per-20per-Mar2016/Mar9-rc-c-30nm-50ul-temp33pt1-b1-b2-b3m2-0xta1-laterTA1-20nM.csv' , 1, 2, 250, 91800,options,0,y1x2);
-   %{
-   [t1x2,y1x2] = readlhcfile('system-b/PurifiedSysB-Apr18-200nM.csv' , 1, 2, 7900/60, 9900/60);
-   [t0x2,y0x2] = processData('system-b/PurifiedSysB-Apr18-200nM.csv' , 1, 2, 767, 7836,options,0,y1x2);
-   init(12) = 39.73; %TA1
-   [tpt5x3,ypt5x3] = processData('system-b/PurifiedSysB-Apr18-100nM-pt5x-pt4x.csv' , 3, 4, 702, 7000, options, 0, 0);
-   init(12) = 14.82; %TA1
-   [tpt4x2,ypt4x2] = processData('system-b/PurifiedSysB-Apr18-100nM-pt5x-pt4x.csv' , 1, 2, 705, 7000, options, 0, 0);
-   init(12) = 28.38; %TA1
-   [tpt3x3,ypt3x3] = processData('system-b/PurifiedSysB-Apr18-100nM-pt3x-pt2x.csv' , 3, 4, 700, 7000, options, 0, 0);
-   init(12) = 16.96; %TA1
-   [tpt2x2,ypt2x2] = processData('system-b/PurifiedSysB-Apr18-100nM-pt3x-pt2x.csv' , 1, 2, 700, 7000, options, 0, 0);
-   init(12) = 14.02; %TA1
-   [tpt1x3,ypt1x3] = processData('system-b/PurifiedSysB-pt1x-ptoh5x.csv' , 3, 4, 928, 20000,options,0,0);
-   init(12) = 4.74; %TA1
-   [tptoh5x2,yptoh5x2] = processData('system-b/PurifiedSysB-pt1x-ptoh5x.csv' , 1, 2, 925, 80000,options,0,0);
-   init(12) = 92.15; %TA1
-    [tNA1x2,yNA1x2] = processData('sysb-may1/Check-Sys-B.csv' , 5, 6, 1900, 3300, options, 0, 0);
-    [tNA1x2,yNA1x2] = processData('sysb-may1/Check-Sys-B-100nM-new.csv' , 5, 6, 1100, 2700, options, 0, 0);
-    [tNA1x2,yNA1x2] = processData('sysb-may1/Check-Sys-B-200nM-new.csv' , 5, 6, 1750, 3100, options, 0, 0);
-   init(1) = 95.77; init(4) = 88.02; init(6) = 93.12; init(14) = 100; init(30) = 100; init(2) = 95.47;
-   %}
-   %{
-    [tCC0a1b2,yCC0a1b2] = processData('sysb-may1/Cross-catalytic-100nMTF.csv' , 1, 2, 1100, 8000, options, 0, 0);
-    init(2) = 0;
-    [tCC0a0b3,yCC0a0b3] = processData('sysb-may1/Cross-catalytic-100nMTF.csv' , 3, 4, 1100, 8000, options, 0, 0);
-   init(2) = 6.78;
-   [tCC0apt05b2,yCC0apt05b2] = processData('sysb-may1/Cross-catalytic-ptoh5x.csv' , 1, 2, 1400, 3700, options, 0, 0);
-   init(2) = 0;
-   init(12) = 4.74;
-   [tCCpt05a0b3,yCCpt05a0b3] = processData('sysb-may1/Cross-catalytic-ptoh5x.csv' , 3, 4, 1400, 3700, options, 0, 0);
-   tcalc = tCCpt05a0b3; ycalc = yCCpt05a0b3;
-   %}
-   tcalc = t0x2; ycalc = y0x2;
+   [tl8r0h,yl8r0h] = readlhcfile('data/Aug8-RC10nM-H9-10nM-L8R0-Signal.csv' , 1, 2, 1520/60, 1540/60);
+   [tl8r0,yl8r0] = processData('data/Aug8-RC10nM-H9-10nM-L8R0-Signal.csv' , 1, 2, 220, 1420, options, 0, yl8r0h);
+
+   [tl7r1h,yl7r1h] = readlhcfile('data/Aug8-RC10nM-H9-10nM-L7R1-Signal.csv' , 1, 2, 6600/60, 7000/60);
+   [tl7r1,yl7r1] = processData('data/Aug8-RC10nM-H9-10nM-L7R1-Signal.csv' , 1, 2, 150, 5940, options, 0, yl7r1h);
+
+   options(3) = 0;
+   [trc,yrc] = processData('data/Aug8-RC-Test-Vincent-1to1pt5-10nM.csv' , 1, 2, 175, 760, options, 0, 0);
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    %Calculate Fit.
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+   %{
    k = zeros(9,1);
    kmethod = zeros(9,1);
    kinterval = {};
@@ -229,17 +197,19 @@ function s = solveode2(fn, init, shouldFit)
    fit = fitcalc(:,curve);
    err = only_leastsquares(fit,ycalc);
    printf("error for this curve is %e\n",err);
+   %}
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
    %PLOT DATA
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
-   l = length(init);
-   i = 1;
+   %l = length(init);
+   %i = 1;
    plotColor = rand(20,3);
 
    ops = {
-            'tcalc', 'ycalc', 'AB123 TA TB Expt',
-            'tcalc', 'fit', 'fit for curve'
+            'tl8r0', 'yl8r0', 'pL8R0',
+            'tl7r1', 'yl7r1', 'pL7R1'
+            'trc', 'yrc', 'pRC'
         };
 
         hold on;
@@ -250,9 +220,9 @@ function s = solveode2(fn, init, shouldFit)
         endfor
 
         for i=1:9
-            xc = 0.9*max(tcalc);
-            yc = (10-i)/10*max(ycalc);
-            text(xc,yc,strcat("k(",mat2str(i),")=",mat2str(k(i))));
+            xc = 0.9*max(tl8r0);
+            yc = (10-i)/10*max(yrc);
+            %text(xc,yc,strcat("k(",mat2str(i),")=",mat2str(k(i))));
         endfor
         legend(leg);
         hold off;
