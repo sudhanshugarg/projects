@@ -1,0 +1,146 @@
+25C-L4R3,,
+Time (min),Intensity (a.u.),
+0.008333333768,6.125376701,
+0.02500000037,6.432058334,
+0.04166666791,6.051065445,
+0.05833333358,5.811418056,
+0.07500000298,6.085618973,
+0.09166666865,6.598107338,
+0.1083333343,5.933161259,
+0.125,5.964785099,
+0.1416666657,6.514971256,
+0.1583333313,6.061261654,
+0.174999997,6.295408726,
+0.1916666627,6.500356197,
+0.2083333284,6.331215382,
+0.224999994,6.307760715,
+0.2416666597,6.408220768,
+0.2583333254,6.75548172,
+0.275000006,6.413705826,
+0.2916666567,6.263392925,
+
+25C-L4R3,
+25C-L4R3
+Collection Time: 8/9/2016 6:08:12 PM
+Operator Name  :
+Kinetics Software Version: 1.1(133)
+Parameter List :
+Report Time: Tue 09 Aug 06:08:12 PM 2016
+Batch: C:\Varian\Cary Eclipse WinFLR\DATA\Sudhanshu G\Memoids-9\Aug 2016 Single Hairpin Opening\Aug9-RC10nM-H9-10nM-L4R3-Signal.FBKN
+Software version: 1.1(133)
+Operator:
+Instrument Parameters
+Instrument                        Cary Eclipse
+Instrument Serial Number          EL04103867
+Data mode                         Fluorescence
+Ex. wavelength (nm)               524.00
+Em. wavelength (nm)               541.00
+Ex. Slit (nm)                     10
+Em. Slit (nm)                     5
+Averaging Time (s)                1.0000
+Cycle time(min)                   0.0000
+Stop time(min)                    1440.0000
+Emission filter                   Open
+Excitation Filter                 Auto
+PMT voltage (V)                   High
+Multicell holder                  Multicell
+Temperature control
+Device                           Temperature controller
+Set temperature (°C)             25.00
+Monitor                          Block
+Comments:
+Method Log     :
+Method Name    : C:\Varian\Cary Eclipse WinFLR\DATA\Sudhanshu G\Memoids-9\Aug 2016 Single Hairpin Opening\Aug9-RC10nM-H9-10nM-L4R3-Signal.FBKN
+Date/Time stamp: 8/9/2016 6:07:59 PM
+Method Modifications:
+PMT Volts Changed: 11/20/2013 5:25:13 PM, Old:600, New:800
+Emission PMT (V): Changed: 11/20/2013 5:25:14 PM, Old: 600, New: 800
+Cell Changer Changed: 11/20/2013 5:33:14 PM, Old:OFF, New:ON
+Cell1 Changed: 11/20/2013 5:33:14 PM, Old:OFF, New:ON
+Cell2 Changed: 11/20/2013 5:33:14 PM, Old:OFF, New:ON
+Monitoring device: Changed: 11/20/2013 5:33:14 PM, Old:PCB 150, New:Block
+Excitation Wavelength Changed: 11/20/2013 5:33:14 PM, Old: 400.00, New: 303.00
+Emission Wavelength Changed: 11/20/2013 5:33:14 PM, Old: 600.00, New: 371.00
+Ex. Slit Width (nm): Changed: 11/20/2013 5:33:14 PM, Old:5, New:10
+Em. Slit Width (nm): Changed: 11/20/2013 5:33:14 PM, Old:5, New:10
+Ave. time (s): Changed: 11/20/2013 5:33:14 PM, Old:0.10000, New:1.00000
+Cell2 Changed: 11/20/2013 5:46:01 PM, Old:ON, New:OFF
+Zero Mode Changed: 11/20/2013 5:49:03 PM, Old:OFF, New:Reading
+Zero Mode Changed: 11/20/2013 5:49:05 PM, Old:Reading, New:ON
+Sample1 Changed: 11/20/2013 5:49:23 PM, Old:Sample1, New:Blank
+Stop Time 1 Changed: 11/20/2013 6:03:21 PM, Old: 1.0000, New:100.0000
+Sample1 Changed: 11/20/2013 9:19:49 PM, Old:Blank, New:1x TAE
+Ave. time (s): Changed: 11/21/2013 12:00:35 PM, Old:1.00000, New:0.10000
+Excitation Wavelength Changed: 11/22/2013 11:48:08 AM, Old: 303.00, New: 240.00
+Ex. Slit Width (nm): Changed: 11/22/2013 11:48:08 AM, Old:10, New:20
+Em. Slit Width (nm): Changed: 11/22/2013 11:48:08 AM, Old:10, New:20
+Ave. time (s): Changed: 11/22/2013 11:48:08 AM, Old:0.10000, New:1.00000
+Sample1 Changed: 11/22/2013 11:48:33 AM, Old:1x TAE, New:500 nM B3-Amino
+Auto Temp Setting Changed: 2/25/2014 7:32:10 PM, Old:OFF, New:ON
+Block Temp Changed: 2/25/2014 7:32:10 PM, Old:  20.00, New:  22.00
+Block (°C): Changed: 2/25/2014 7:32:10 PM, Old:OFF, New:ON
+Excitation Wavelength Changed: 2/25/2014 7:32:10 PM, Old: 240.00, New: 524.00
+Emission Wavelength Changed: 2/25/2014 7:32:10 PM, Old: 371.00, New: 541.00
+Ex. Slit Width (nm): Changed: 2/25/2014 7:32:10 PM, Old:20, New:5
+Em. Slit Width (nm): Changed: 2/25/2014 7:32:10 PM, Old:20, New:5
+X mode Changed: 2/25/2014 7:32:10 PM, Old:min, New:sec
+Stop Time 1 Changed: 2/25/2014 7:32:10 PM, Old:100.0000, New:30000.0000
+Sample1 Changed: 2/25/2014 7:33:01 PM, Old:500 nM B3-Amino, New:100nM TET-FQ; Slit:5-5; Voltage: 800V
+Cell2 Changed: 2/28/2014 11:07:39 AM, Old:OFF, New:ON
+Cell3 Changed: 2/28/2014 11:07:39 AM, Old:OFF, New:ON
+Autoconvert Changed: 2/28/2014 11:07:40 AM, Old:None, New:Ascii with Log
+Em. Slit Width (nm): Changed: 2/28/2014 11:07:40 AM, Old:5, New:2.5
+X mode Changed: 2/28/2014 11:07:40 AM, Old:sec, New:min
+Stop Time 1 Changed: 2/28/2014 11:07:40 AM, Old:30000.0000, New:1440.0000
+Cell1 Changed: 4/15/2014 11:40:31 AM, Old:ON, New:OFF
+Cell2 Changed: 4/15/2014 11:40:31 AM, Old:ON, New:OFF
+Block Temp Changed: 4/15/2014 11:40:31 AM, Old:  22.00, New:  25.00
+Cell1 Changed: 4/24/2014 11:49:58 AM, Old:OFF, New:ON
+Cell2 Changed: 4/24/2014 11:49:58 AM, Old:OFF, New:ON
+Current Method Changed: 10/12/2015 1:11:16 AM, Old:C:\Varian\Cary Eclipse WinFLR\DATA\Sudhanshu G\Memoids-8\TET-FQ-25C-200nM.FMKN, New:C:\Varian\Cary Eclipse WinFLR\DATA\Sudhanshu G\Memoids-8\M8-Set1-Apr18\TET-FQ-25C-200nM.FMKN
+Cell1 Changed: 10/12/2015 1:12:45 AM, Old:ON, New:OFF
+Cell2 Changed: 10/12/2015 1:12:45 AM, Old:ON, New:OFF
+Ex. Slit Width (nm): Changed: 10/12/2015 1:13:05 AM, Old:5, New:10
+Em. Slit Width (nm): Changed: 10/12/2015 1:13:05 AM, Old:2.5, New:5
+Sample3 Changed: 10/13/2015 12:32:51 PM, Old:Sample3, New:RC-B2-B2a-30nM
+Sample3 Changed: 10/13/2015 1:11:18 PM, Old:RC-B2-B2a-30nM, New:RC-B2below-30nM
+Sample3 Changed: 10/13/2015 1:52:21 PM, Old:RC-B2below-30nM, New:RC4-Anneal-Checks
+Sample3 Changed: 10/14/2015 12:22:37 AM, Old:RC4-Anneal-Checks, New:RC4-Find-Culprit
+Cell1 Changed: 10/14/2015 12:36:07 AM, Old:OFF, New:ON
+Sample1 Changed: 10/14/2015 12:36:38 AM, Old:100nM TET-FQ; Slit:5-5; Voltage: 800V, New:Find-The-Culprit
+Sample3 Changed: 10/14/2015 12:36:38 AM, Old:RC4-Find-Culprit, New:RC4-Increasing
+Cell3 Changed: 10/14/2015 12:57:28 AM, Old:ON, New:OFF
+Cell1 Changed: 10/14/2015 1:02:19 AM, Old:ON, New:OFF
+Cell3 Changed: 10/14/2015 1:02:19 AM, Old:OFF, New:ON
+Sample3 Changed: 10/14/2015 1:02:46 AM, Old:RC4-Increasing, New:RC5-A1-For-B1
+Cell1 Changed: 10/14/2015 1:21:09 AM, Old:OFF, New:ON
+Cell3 Changed: 10/14/2015 1:21:09 AM, Old:ON, New:OFF
+Sample1 Changed: 10/14/2015 1:21:34 AM, Old:Find-The-Culprit, New:B3-And-A1
+Cell3 Changed: 10/14/2015 1:31:02 AM, Old:OFF, New:ON
+Cell1 Changed: 10/14/2015 7:19:23 PM, Old:ON, New:OFF
+Sample3 Changed: 10/14/2015 7:19:47 PM, Old:RC5-A1-For-B1, New:RC-a-2100pmol-T1
+Sample3 Changed: 10/14/2015 7:52:14 PM, Old:RC-a-2100pmol-T1, New:RC-a-2100pmol-pt3x-init-T2
+Sample3 Changed: 10/14/2015 8:24:13 PM, Old:RC-a-2100pmol-pt3x-init-T2, New:RC-a-2100pmol-pt3x-init-T2-37C
+Block Temp Changed: 10/14/2015 8:24:23 PM, Old:  25.00, New:  37.00
+Sample3 Changed: 10/15/2015 12:14:00 PM, Old:RC-a-2100pmol-pt3x-init-T2-37C, New:37C-RCa-30nM
+Sample3 Changed: 10/16/2015 5:31:36 PM, Old:37C-RCa-30nM, New:37C-RCa-30nM-TA_F2
+Sample3 Changed: 10/19/2015 4:13:28 PM, Old:37C-RCa-30nM-TA_F2, New:37C-RCa-30nM-TA_F1_F2
+Sample3 Changed: 10/19/2015 7:16:44 PM, Old:37C-RCa-30nM-TA_F1_F2, New:37C-RCa-30nM-TA_F1_F2-SysA
+Sample3 Changed: 10/20/2015 10:05:35 AM, Old:37C-RCa-30nM-TA_F1_F2-SysA, New:37C-RCa-30nM-SysA-TA_F1-1isto2
+Sample3 Changed: 10/21/2015 11:25:10 AM, Old:37C-RCa-30nM-SysA-TA_F1-1isto2, New:37C-RC-b-Reason-For-SysA-Leak
+Sample3 Changed: 10/21/2015 10:07:21 PM, Old:37C-RC-b-Reason-For-SysA-Leak, New:37C-TA-SysB-Leak-Check
+Sample3 Changed: 10/22/2015 9:31:10 PM, Old:37C-TA-SysB-Leak-Check, New:37C-SysB-Leak
+Block Temp Changed: 8/8/2016 12:47:19 PM, Old:  37.00, New:  25.00
+Sample3 Changed: 8/8/2016 12:56:25 PM, Old:37C-SysB-Leak, New:25C-RC-Test-10nM
+Sample3 Changed: 8/8/2016 1:13:42 PM, Old:25C-RC-Test-10nM, New:25C-L8R0
+Sample3 Changed: 8/8/2016 2:55:10 PM, Old:25C-L8R0, New:25C-L8R0-RC-withoutH9
+Sample3 Changed: 8/8/2016 3:55:10 PM, Old:25C-L8R0-RC-withoutH9, New:25C-L8R0
+Sample3 Changed: 8/8/2016 4:23:29 PM, Old:25C-L8R0, New:25C-L7R1
+Sample3 Changed: 8/9/2016 1:41:10 PM, Old:25C-L7R1, New:25C-L6R2
+Sample3 Changed: 8/9/2016 2:32:15 PM, Old:25C-L6R2, New:25C-L5R3
+Sample3 Changed: 8/9/2016 4:03:37 PM, Old:25C-L5R3, New:25C-L7R0
+Sample3 Changed: 8/9/2016 4:46:21 PM, Old:25C-L7R0, New:25C-L6R1
+Sample3 Changed: 8/9/2016 5:15:44 PM, Old:25C-L6R1, New:25C-L5R2
+Sample3 Changed: 8/9/2016 6:08:12 PM, Old:25C-L5R2, New:25C-L4R3
+End Method Modifications
+

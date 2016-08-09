@@ -61,25 +61,17 @@ function s = solveode2(fn, init, shouldFit)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%Initial Concentrations - usually
     %%%%%% passed in through init.
+    %%%%%% init has 6 values.
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-   init(1) = 0; %A1
-   init(2) = 0; %TB1
-   init(4) = 0; %A2
-   init(6) = 0; %A3
-   init(14) = 0; %TA
-   %{
-   init(19) = 87.46; %B1
-   init(21) = 92.95; %B2
-   init(23) = 86.38; %B3
-   %}
-   init(19) = 19.20; %B1
-   init(21) = 11.60; %B2
-   init(23) = 9.80; %B3
-   init(30) = 0; %TB
-   init(35) = 15; %RC
+   init(1) = 0; %Init
+   init(2) = 356*2/80; %H9
+   init(3) = 0; %IH9
+   init(4) = 9*100/80; %RC
+   init(5) = 0; %TET
+   init(6) = 0; %IH9FQ
 
-   conc = min([init(19), init(21)]);
-   conc = min([conc, init(23)]);
+   %conc = min([init(1), init(2)]);
+   %conc = min([conc, init(4)]);
    conc = 10;
 
    mintime = Inf;
@@ -108,11 +100,55 @@ function s = solveode2(fn, init, shouldFit)
    options(5) = 0;
 
    options(3) = 1;
+   init(1) = 187*2/80; %L8R0
    [tl8r0h,yl8r0h] = readlhcfile('data/Aug8-RC10nM-H9-10nM-L8R0-Signal.csv' , 1, 2, 1520/60, 1540/60);
-   [tl8r0,yl8r0] = processData('data/Aug8-RC10nM-H9-10nM-L8R0-Signal.csv' , 1, 2, 220, 1420, options, 0, yl8r0h);
+   [tl8r0,yl8r0] = processData('data/Aug8-RC10nM-H9-10nM-L8R0-Signal.csv' , 1, 2, 208, 1420, options, 0, yl8r0h);
+   %tcalc = tl8r0;
+   %ycalc = yl8r0;
+   %k(1) = 2e-3
 
+   init(1) = 54*2/80; %L7R1
    [tl7r1h,yl7r1h] = readlhcfile('data/Aug8-RC10nM-H9-10nM-L7R1-Signal.csv' , 1, 2, 6600/60, 7000/60);
-   [tl7r1,yl7r1] = processData('data/Aug8-RC10nM-H9-10nM-L7R1-Signal.csv' , 1, 2, 150, 5940, options, 0, yl7r1h);
+   [tl7r1,yl7r1] = processData('data/Aug8-RC10nM-H9-10nM-L7R1-Signal.csv' , 1, 2, 120, 5940, options, 0, yl7r1h);
+   %tcalc = tl7r1;
+   %ycalc = yl7r1;
+   %k(1) = 1.24e-3
+
+   %Data collected Aug 9 2016
+   init(1) = 232*2/80; %L6R2
+   [tl6r2h,yl6r2h] = readlhcfile('data/Aug9-RC10nM-H9-10nM-L6R2-Signal.csv' , 1, 2, 2840/60, 2910/60);
+   [tl6r2,yl6r2] = processData('data/Aug9-RC10nM-H9-10nM-L6R2-Signal.csv' , 1, 2, 190, 2750, options, 0, yl6r2h);
+   tcalc = tl6r2;
+   ycalc = yl6r2;
+   %k(1) = 1.24e-3
+
+   init(1) = 246*2/80; %L5R3
+   [tl5r3h,yl5r3h] = readlhcfile('data/Aug9-RC10nM-H9-10nM-L5R3-Signal.csv' , 1, 2, 4000/60, 5200/60);
+   [tl5r3,yl5r3] = processData('data/Aug9-RC10nM-H9-10nM-L5R3-Signal.csv' , 1, 2, 190, 3200, options, 0, yl5r3h);
+   %tcalc = tl5r3;
+   %ycalc = yl5r3;
+   %k(1) = 1.24e-3
+
+   init(1) = 202*2/80; %L7R0
+   [tl7r0h,yl7r0h] = readlhcfile('data/Aug9-RC10nM-H9-10nM-L7R0-Signal.csv' , 1, 2, 1600/60, 2400/60);
+   [tl7r0,yl7r0] = processData('data/Aug9-RC10nM-H9-10nM-L7R0-Signal.csv' , 1, 2, 240, 1480, options, 0, yl7r0h);
+   %tcalc = tl7r0;
+   %ycalc = yl7r0;
+   %k(1) = 1.24e-3
+
+   init(1) = 166*2/80; %L6R1
+   [tl6r1h,yl6r1h] = readlhcfile('data/Aug9-RC10nM-H9-10nM-L6R1-Signal.csv' , 1, 2, 1580/60, 1620/60);
+   [tl6r1,yl6r1] = processData('data/Aug9-RC10nM-H9-10nM-L6R1-Signal.csv' , 1, 2, 230, 1500, options, 0, yl6r1h);
+   %tcalc = tl6r1;
+   %ycalc = yl6r1;
+   %k(1) = 1.24e-3
+
+   init(1) = 82*2/80; %L5R2
+   [tl5r2h,yl5r2h] = readlhcfile('data/Aug9-RC10nM-H9-10nM-L5R2-Signal.csv' , 1, 2, 2910/60, 3000/60);
+   [tl5r2,yl5r2] = processData('data/Aug9-RC10nM-H9-10nM-L5R2-Signal.csv' , 1, 2, 260, 2820, options, 0, yl5r2h);
+   %tcalc = tl5r2;
+   %ycalc = yl5r2;
+   %k(1) = 1.24e-3
 
    options(3) = 0;
    [trc,yrc] = processData('data/Aug8-RC-Test-Vincent-1to1pt5-10nM.csv' , 1, 2, 175, 760, options, 0, 0);
@@ -121,65 +157,33 @@ function s = solveode2(fn, init, shouldFit)
    %Calculate Fit.
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-   %{
-   k = zeros(9,1);
-   kmethod = zeros(9,1);
+   k = zeros(3,1);
+   kmethod = zeros(3,1);
    kinterval = {};
    %kmethod(i) = 1 => using iterative, else default using doubling.
    %currently all unimolecular reaction use iterative methods
+
    %rate of hairpin + initiator strand
-   k(1) = 1.62e-4; %DONE
-   kmethod(1) = 1;
-   kinterval{1} = [1e-5, 3.4e-4];
+   k(1) = 2e-3;
+   kmethod(1) = 0;
+   kinterval{1} = [1e-4, 5e-3];
 
-   % rate of displacement of initiator (unimolecular)
-   k(2) = 5.69e-2; %DONE
-   %k(2) = 50; %DONE
-   kmethod(2) = 1;
-   kinterval{2} = [1e-4, 1.3e-3];
+   %backward rate of hairpin:initiator (unimolecular)
+   k(2) = 0;
+   kmethod(2) = 0;
+   kinterval{2} = [1e-2, 1e+1];
 
-   % rate of toehold exchange - reversibly
-   k(3) = 7.6875e-5; %DONE
+   % rate of rc being opened
+   k(3) = 1.3e-3; %DONE
    kmethod(3) = 2; % don't calculate
    kinterval{3} = [1e-6, 1e-4];
 
-   % rate of B2 displacing RC irreversibly - the toehold mediated strand displacement.
-   k(4) = 1.6715e-1;
-   kmethod(4) = 1;
-   kinterval{4} = [1e-4, 1e-2];
-
-   % rate of two hairpins opening up
-   k(5) = 8.66e-8; %DONE, leak rate
-   kmethod(5) = 1;
-   kinterval{5} = [1e-10, 1e-3];
-
-   % rate of just hairpin B2 opening up RC, via leak
-   %k(6) = 5.76e-07; %DONE
-   k(6) = 5.05e-14; %DONE
-   kmethod(6) = 1;
-   kinterval{6} = [1e-14, 1e-10];
-
-   % rate of two single strands hybridizing.
-   k(7) = 4e-3; %kta
-   kmethod(7) = 2; % don't calculate
-   kinterval{7} = [1e-3, 1e+3];
-
-   % rate of duplex dehybridizing
-   k(8) = 1.46615e-3; %krta
-   kmethod(8) = 2;
-   kinterval{8} = [1e-9, 1e-2];
-
-   % rate of RC duplex dehybridizing
-   %k(9) = 9.505e-7; %RC opening up spontaneously.
-   k(9) = 0;
-   kmethod(9) = 2;
-   kinterval{9} = [0, 0];
-
-   %33 is the TET curve, and 1000 is max number of iterations.
+   %5 is the TET curve, and 1000 is max number of iterations.
    %k is the initial set of values being passed.
-   curve = 33;
+   curve = 5;
    %64 chosen since assuming that the upper limit of any rate constant is
    %2^64 * 1e-16 ~ 2k /nMs, which is quite fast.
+
    if(ne(shouldFit,0))
    [kfit] = fit_rate_constants(tcalc,ycalc,fn,k,kmethod,kinterval,init,curve,64);
    else
@@ -197,7 +201,6 @@ function s = solveode2(fn, init, shouldFit)
    fit = fitcalc(:,curve);
    err = only_leastsquares(fit,ycalc);
    printf("error for this curve is %e\n",err);
-   %}
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
    %PLOT DATA
@@ -207,8 +210,14 @@ function s = solveode2(fn, init, shouldFit)
    plotColor = rand(20,3);
 
    ops = {
+            'tcalc', 'fit', 'FIT',
             'tl8r0', 'yl8r0', 'pL8R0',
-            'tl7r1', 'yl7r1', 'pL7R1'
+            'tl7r1', 'yl7r1', 'pL7R1',
+            'tl6r2', 'yl6r2', 'pL6R2',
+            'tl5r3', 'yl5r3', 'pL5R3',
+            'tl7r0', 'yl7r0', 'pL7R0',
+            'tl6r1', 'yl6r1', 'pL6R1',
+            'tl5r2', 'yl5r2', 'pL5R2',
             'trc', 'yrc', 'pRC'
         };
 
