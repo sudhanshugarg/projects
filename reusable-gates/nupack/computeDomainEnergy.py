@@ -80,7 +80,7 @@ def reverseComplement(strand):
     return strand
 
 #calculate energy and write into fenergy file
-def calcAndStoreDomainEnergy(singleDomain, fenergy):
+def calcAndStoreDomainEnergy(singleDomain):
 
     if singleDomain in domainEnergyMap:
        return
@@ -102,31 +102,17 @@ def calcAndStoreDomainEnergy(singleDomain, fenergy):
             #print BASES[i],":", singleDomain,":", BASES[j],"__",duplexMfe, " ", energyMap[justPrefixName], " diff=", duplexMfe-energyMap[justPrefixName]
             energy = energy + duplexMfe - energyMap[justPrefixName]
     energy = energy/16.0
-    f = open(fenergy,'a')
-    f.write(singleDomain+' '+str(energy)+'\n');
-    f.close()
 
     domainEnergyMap[singleDomain] = energy
+    return energy
 #end calcAndStoreDomainEnergy
 
-def computeAllDomainEnergies(current, toehold, fenergy):
-    if(toehold < 1):
-        calcAndStoreDomainEnergy(current, fenergy);
-        return
-    for j in range(4):
-        curr_next = current+BASES[j]
-        computeAllDomainEnergies(curr_next, toehold-1, fenergy)
-    #end for
-#end computeAllDomainEnergies
-
 def main():
-    if(len(sys.argv) != 3):
-       print "Usage: python filename.py toeholdLength domainEnergy.txt"
+    if(len(sys.argv) != 2):
+       print "Usage: python filename.py sequence"
        return
     createPrefixSuffix()
-    readMappingFiles(sys.argv[2])
-    print "mapping files read"
-    computeAllDomainEnergies('', int(sys.argv[1]), sys.argv[2])
+    print calcAndStoreDomainEnergy(sys.argv[1])
     #endfor
 
 #end main()
@@ -160,8 +146,8 @@ def createPrefixSuffix():
 #GlOBAL Declarations here
 energyMap = dict()
 domainEnergyMap = dict()
-PREFIX='CATCGATCGATCG'
-SUFFIX='CATCGATCGATCGATCG'
+PREFIX='CCATCATCGATCGATCG'
+SUFFIX='CGTACATCGATCGATCGATCG'
 DIR='runs/'
 BASES='ATCG'
 
